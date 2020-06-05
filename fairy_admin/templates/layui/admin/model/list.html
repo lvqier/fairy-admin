@@ -169,7 +169,7 @@
         , laytpl = layui.laytpl;
 
         {% if admin_view.create_model %}
-        function showEditModel(content, title) {
+        function showEditModel(content, title, table_id=null) {
           layer.open({
             type: 1, 
             area: "640px",
@@ -194,16 +194,40 @@
                 method: 'GET',
                 url: "{{ get_url('.create_view', url=return_url, modal=True) | safe }}",
                 success: function(result) {
-                  showEditModel(result, "{{ _gettext('Create New Record') }}");
+                  showEditModel(result, "{{ _gettext('Create New Record') }}", obj.config.id);
                 },
               });
             {% else %}
               window.location = "{{ get_url('.create_view', url=return_url) }}";
             {% endif %}
-          } else if (event === 'delete') {
-            console.log(obj);
+          } else if (obj.event === 'delete') {
+            var checkStatus = table.checkStatus(obj.config.id);
+            var ids = [];
+            checkStatus.data.forEach(function(item, idx) {
+              ids.push(item._id);
+            });
+            layer.confirm("{{ _gettext('Are you sure you want to delete these selected records?') }}", function(index){
+              $.ajax({
+                async: true,
+                method: 'POST',
+                url: "{{ get_url('.ajax_delete_view') }}",
+                contentType : "application/json",
+                data: JSON.stringify({
+                  ids: ids
+                }),
+                success: function(result) {
+                  if (result.code === 0) {
+                    table.reload(obj.config.id);
+                    layer.close(index);
+                  } else {
+                    layer.alert(result.msg);
+                  }
+                }
+              });
+            });
           }
         });
+
         //监听工具条
         table.on('tool(table-model-list)', function(obj){
           var data = obj.data;
@@ -228,11 +252,12 @@
                 async: true,
                 method: 'POST',
                 url: "{{ get_url('.ajax_delete_view') }}",
-                data: {
-                  id: data._id
-                },
+                contentType : "application/json",
+                data: JSON.stringify({
+                  ids: [data._id]
+                }),
                 success: function(result) {
-                  if (result.code == 0) {
+                  if (result.code === 0) {
                     obj.del();
                     layer.close(index);
                   } else {
@@ -306,7 +331,6 @@
             }
             var index = $(data.form).data("layer-index");
             const formData = new FormData(data.form);
-            console.log(new URLSearchParams(formData));
             $.ajax({
               method: $(data.form).attr("method"),
               url: $(data.form).attr("action"),
@@ -315,12 +339,12 @@
               contentType: false,
               success: function(result) {
                 if (result.code === 0) {
+                  table.reload('table-model-list');
                   layer.close(index);
                 } else {
                   if (result.errors) {
                     for (var f in result.errors) {
                       var field = result.errors[f];
-                      console.log(f, field);
                       layer.alert(field.label + ": " + field.errors[0], {
                         'title': result.msg
                       });

@@ -3,24 +3,44 @@ import os
 import json
 
 from flask import Blueprint, request, abort, jsonify
-from flask_admin import Admin, expose
+from flask_admin import Admin, expose, consts as admin_consts
 from flask_admin.model.base import ViewArgs, BaseModelView
+from flask_admin.form.widgets import Select2Widget
+from flask_admin.model.fields import AjaxSelectMultipleField
+from flask_admin.contrib.sqla.fields import QuerySelectMultipleField
+from flask_sqlalchemy import Model
 from math import ceil
-from wtforms.widgets import TextArea
+from wtforms.widgets import TextArea, html_params
+from markupsafe import escape, Markup
 
 
 TextArea.tag = 'textarea'
+admin_consts.ICON_TYPE_LAYUI = 'layui'
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
 
 class FairyAdmin(Admin):
+    def __init__(self, *args, **kwargs):
+        super(FairyAdmin, self).__init__(*args, **kwargs)
+        self.index_view.menu_icon_type = admin_consts.ICON_TYPE_LAYUI
+        self.index_view.menu_icon_value = 'layui-icon-home'
 
-    def init_app(self, app, *args, **kwargs):
-        super(FairyAdmin, self).init_app(app, *args, **kwargs)
+    def init_app(self, app, *args, index_view=None, **kwargs):
+        if index_view is None:
+            index_view = self.index_view
+
+        super(FairyAdmin, self).init_app(app, *args, index_view=index_view, **kwargs)
+
         template_folder = os.path.join('templates', self.template_mode)
         blueprint = Blueprint('fairy_admin', __name__, template_folder=template_folder, static_folder='static')
         app.register_blueprint(blueprint, url_prefix='/admin/fairy')
+
+
+def _repr(value):
+    if isinstance(value, Model):
+        return repr(value)
+    return value
 
 
 def _ajax(self):
@@ -60,7 +80,7 @@ def _ajax(self):
         }
         for list_column in list_columns:
             field = list_column[0]
-            item[field] = getattr(row, field)
+            item[field] = _repr(getattr(row, field))
         page.append(item)
 
     result = {
@@ -141,19 +161,15 @@ def _ajax_delete(self):
     if not self.can_delete:
         return jsonify(dict(code=403, msg='Can not edit'))
 
-    form = self.delete_form()
+    data = request.json
 
-    if not self.validate_form(form):
-        return jsonify(dict(code=400, msg='Form validate failed'))
+    for id in data.get('ids', []):
+        model = self.get_one(id)
+        if model is None:
+            continue
+        if not self.delete_model(model):
+            return jsonify(dict(code=500, msg='Unknown error.'))
 
-    id = form.id.data
-
-    model = self.get_one(id)
-    if model is None:
-        return jsonify(dict(code=404, msg='Record does not exist.'))
-
-    if not self.delete_model(model):
-        return jsonify(dict(code=500, msg='Unknown error.'))
     return jsonify(dict(code=0, msg=''))
 
 
@@ -169,3 +185,36 @@ expose('/ajax/delete/', methods=['POST'])(BaseModelView.ajax_delete_view)
 
 BaseModelView.can_export = True
 BaseModelView.page_size = 10
+
+
+# 将 select2 组件更换成 xm-select
+_select2_widget_call = Select2Widget.__call__
+
+def _render_xm_select(self, field, options=None, **kwargs):
+    if not self.multiple:
+        return _select2_widget_call(self, field, **kwargs)
+    options = []
+    for val, label, selected in field.iter_choices():
+        options.append(dict(name=_repr(label), value=val, selected=selected))
+    params = {
+        'class': 'xm-select',
+        'data-name': field.name,
+        'data-options': json.dumps(options)
+    }
+    return Markup('<div %s></div>' % html_params(**params))
+
+Select2Widget.__call__ = _render_xm_select
+Select2Widget.tag = 'xm-select'
+
+
+# 适配 xm-select 采用','分割的字段提交方式
+_multi_select_fields = [AjaxSelectMultipleField, QuerySelectMultipleField]
+
+def _patched_process_formdata(self, valuelist):
+    if self.widget.multiple and self.widget.tag == 'xm-select':
+        valuelist = valuelist[0].split(',')
+    return self._old_process_formdata(valuelist)
+
+for field in _multi_select_fields:
+    field._old_process_formdata = field.process_formdata
+    field.process_formdata = _patched_process_formdata

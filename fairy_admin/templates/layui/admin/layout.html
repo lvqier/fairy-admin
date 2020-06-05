@@ -6,8 +6,8 @@
     <i class="glyphicon {{ icon_value }}"></i>
   {% elif icon_type == 'fa' %}
     <i class="fa {{ icon_value }}"></i>
-  {% elif icon_type == 'layui-icon' %}
-    <i class="layui-icon layui-icon-{{ icon_value}}"></i>
+  {% elif icon_type == 'layui' %}
+    <i class="layui-icon {{ icon_value }}"></i>
   {% elif icon_type == 'image' %}
     <img src="{{ url_for('static', filename=icon_value) }}" alt="menu image">
   {% elif icon_type == 'image-url' %}

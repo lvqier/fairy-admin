@@ -40,6 +40,7 @@
         {% block menu_links %}
         <ul class="layui-nav layui-layout-right">
           {{ layout.menu_links() }}
+          {% block access_control %}{% endblock %}
         </ul>
         {% endblock %}
       </div>
@@ -55,9 +56,6 @@
         <ul class="layui-nav layui-nav-tree">
           {{ layout.menu() }}
         </ul>
-        {% endblock %}
-
-        {% block access_control %}
         {% endblock %}
       </div>
       <div class="layui-body">
