@@ -1,0 +1,19 @@
+{% import 'admin/static.html' as admin_static with context%}
+{% import 'admin/lib.html' as lib with context %}
+
+{# store the jinja2 context for form_rules rendering logic #}
+{% set render_ctx = h.resolve_ctx() %}
+
+{% block body %}
+  {# "save and add" button is removed from modal (it won't function properly) #}
+  <div class="layui-fluid" style="padding: 20px">
+  {% block create_form %}
+    {{ lib.render_form(form, return_url, extra=None, form_opts=form_opts,
+                       action=url_for('.ajax_create_view'),
+                       is_modal=True) }}
+  {% endblock %}
+  </div>
+{% endblock %}
+
+{% block tail %}
+{% endblock %}

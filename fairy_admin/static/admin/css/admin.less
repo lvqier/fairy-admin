@@ -1,0 +1,194 @@
+
+.layout-side-fold {
+    .layui-layout-admin {
+        .layui-layout-left {
+            left: 60px;
+        }
+
+        .layui-side {
+            width: 60px;
+        }
+
+        .layui-logo {
+            width: 60px;
+
+            span {
+                display: none;
+            }
+        }
+
+        .layui-body {
+            left: 60px;
+        }
+    }
+
+    .layui-side-menu {
+        .layui-nav {
+            width: 60px;
+
+            .layui-nav-itemed a {
+                background-color: rgba(0,0,0,.3);
+            }
+
+            cite, .layui-nav-more, .layui-nav-child {
+                display: none;
+            }
+        }
+    }
+}
+
+.layui-layout-admin {
+    .layui-layout-left {
+        left: 220px;
+        padding: 0 10px;
+
+        .layui-nav-item {
+            margin: 0 20px;
+
+            a {
+                padding: 0;
+            }
+        }
+    }
+
+    .layui-header {
+        height: 50px;
+        background-color: #fff;
+        border-bottom: none;
+        box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
+
+        a {
+            color: #333;
+        }
+
+        a:hover {
+            color: #000;
+        }
+
+        .layui-this::after, .layui-nav-bar {
+            top: 0 !important;
+            background-color: #20222A;
+            height: 2px;
+        }
+
+        .layui-nav {
+
+            .layui-nav-item {
+                height: 50px;
+                line-height: 50px;
+
+                .layui-icon {
+                    position: relative;
+                    top: 1px;
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+
+    .layui-side {
+        width: 220px;
+        top: 0;
+        z-index: 1001;
+    }
+
+    .layui-logo {
+        height: 50px;
+        width: 220px;
+        line-height: 50px;
+        z-index: 1002;
+        color: rgba(255,255,255,.8);
+        background-color: #20222A !important;
+        box-shadow: 0 1px 2px 0 rgba(0,0,0,.15);
+        
+        a {
+            color: rgba(255,255,255,.8);
+        }
+    }
+
+    .layui-body {
+        left: 220px;
+    }
+}
+
+.layui-side-menu {
+    box-shadow: 1px 0 2px 0 rgba(0,0,0,.05);
+    background-color: #20222A !important;
+
+    .layui-side-scroll {
+        width: 240px;
+    }
+
+    .layui-nav {
+        width: 220px;
+        margin-top: 50px;
+        background: 0 0;
+
+        .layui-nav-item {
+            a {
+                padding-left: 45px;
+            }
+    
+            .layui-icon {
+                position: absolute;
+                left: 20px;
+            }
+        }
+    }
+}
+
+.layui-btn-group {
+    .layui-btn-disabled:first-child {
+        border-left: 1px solid #e6e6e6 !important;
+    }
+
+    .layui-dropdown {
+        .layui-btn {
+            border-radius: 0;
+            border-left: 1px solid rgba(255,255,255,.5);
+        }
+    }
+
+    .layui-dropdown:first-child {
+        border-left: none;
+        .layui-btn {
+            border-radius: 2px 0 0 2px;
+        }
+    }
+
+    .layui-dropdown:last-child {
+        .layui-btn {
+            border-radius: 0 2px 2px 0;
+        }
+    }
+}
+
+.layui-btn + .layui-dropdown, .dropdown-root + .layui-btn {
+    margin-left: 10px;
+}
+
+form.icon {
+    display: inline;
+
+    button {
+        border-style: none;
+        background-color: transparent;
+        cursor: pointer;
+    }
+}
+
+.laytable-cell-1-0-1 {
+    overflow:visible;
+}
+
+.layui-card {
+    .layui-card-header-auto {
+        height: auto;
+    }
+}
+
+.layui-input-inline {
+    .layui-btn {
+        vertical-align: top;
+    }
+}

@@ -1,0 +1,22 @@
+import setuptools
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name="Fairy_Admin-0.0.1",
+    version="0.0.1",
+    author="Qier LU",
+    author_email="lvqier@gmail.com",
+    description="Fairy Admin add template based on Layui to Flask Admin",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/lvqier/fairy-admin",
+    packages=setuptools.find_packages(),
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.6',
+)

@@ -1,0 +1,53 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/lib.html' as lib with context %}
+
+{% block body %}
+  {% block navlinks %}
+  <ul class="nav nav-tabs">
+    <li>
+        <a href="{{ return_url }}">{{ _gettext('List') }}</a>
+    </li>
+    {%- if admin_view.can_create -%}
+    <li>
+        <a href="{{ get_url('.create_view', url=return_url) }}">{{ _gettext('Create') }}</a>
+    </li>
+    {%- endif -%}
+    {%- if admin_view.can_edit -%}
+    <li>
+        <a href="{{ get_url('.edit_view', id=request.args.get('id'), url=return_url) }}">{{ _gettext('Edit') }}</a>
+    </li>
+    {%- endif -%}
+    <li class="active">
+        <a href="javascript:void(0)">{{ _gettext('Details') }}</a>
+    </li>
+  </ul>
+  {% endblock %}
+
+  {% block details_search %}
+    <div class="layui-form-item">
+      <label class="layui-form-label">{{ _gettext('Filter') }}</label>
+      <div class="layui-input-block">
+        <input id="fa_filter" type="text" class="layui-input">
+      </div>
+    </div>
+  {% endblock %}
+
+  {% block details_table %}
+    <table class="layui-table searchable">
+    {% for c, name in details_columns %}
+      <tr>
+        <td>
+          <b>{{ name }}</b>
+        </td>
+        <td>
+        {{ get_value(model, c) }}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+  {% endblock %}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+{% endblock %}

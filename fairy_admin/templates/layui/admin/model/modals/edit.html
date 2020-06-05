@@ -1,0 +1,19 @@
+{% import 'admin/static.html' as admin_static with context%}
+{% import 'admin/lib.html' as lib with context %}
+
+{# store the jinja2 context for form_rules rendering logic #}
+{% set render_ctx = h.resolve_ctx() %}
+
+{% block body %}
+  <div class="layui-fluid" style="padding: 20px">
+    {# "save and continue" button is removed from modal (it won't function properly) #}
+    {% block edit_form %}
+      {{ lib.render_form(form, return_url, extra=None, form_opts=form_opts,
+                         action=url_for('.ajax_edit_view', id=request.args.get('id')),
+                         is_modal=True) }}
+    {% endblock %}
+  </div>
+{% endblock %}
+
+{% block tail %}
+{% endblock %}

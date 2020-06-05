@@ -1,0 +1,343 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/lib.html' as lib with context %}
+{% import 'admin/static.html' as admin_static with context%}
+{% import 'admin/model/layout.html' as model_layout with context %}
+{% import 'admin/actions.html' as actionlib with context %}
+{% import 'admin/model/row_actions.html' as row_actions with context %}
+
+{% block head %}
+  {{ super() }}
+  {{ lib.form_css() }}
+  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/modules/dropdown.css') }}" />
+{% endblock %}
+
+{% block body %}
+  <div class="layui-card">
+    <div class="layui-card-header layui-card-header-auto">
+    {% block model_menu_bar %}
+      {% block model_menu_bar_before_filters %}{% endblock %}
+      {% raw %}
+      <script id="filter-option" type="text/html">
+        {{# layui.each(d, function(filter_idx, filter) { }}
+        <div class="layui-form-item filter-item" id="filter-item-{{ filter_idx }}">
+          <label class="layui-form-label">{{ filter.name }}</label>
+          <div class="layui-input-inline">
+            <select lay-search data-idx={{ filter_idx }} required lay-verify="required" lay-filter="select-filter">
+            {{# layui.each(filter.options, function(idx, item) { }}
+              {{# if (item.arg === filter.option) { }}
+              <option value="{{ item.arg }}" selected>{{ item.operation }}</option>
+              {{# } else { }}
+              <option value="{{ item.arg }}">{{ item.operation }}</option>
+              {{# } }}
+            {{# }); }}
+            </select>
+          </div>
+          <div class="layui-input-inline">
+            <input id="input-filter-{{ filter_idx }}" type="text" class="layui-input input-filter" data-idx="{{ filter_idx }}" name="tpl{{ filter_idx }}_{{ filter.option }}" />
+          </div>
+          <div class="layui-input-inline">
+            <button class="layui-btn layui-btn-primary btn-remove-filter" data-idx={{ filter_idx }}>
+              <i class="layui-icon layui-icon-close"></i>
+              <span>移除</span>
+            </button>
+          </div>
+        </div>
+        {{# }); }}
+      </script>
+      {% endraw %}
+      <form class="layui-form" lay-filter="form-filter" id="form-filter">
+        {% if search_supported %}
+        <div class="layui-form-item">
+          <label class="layui-form-label">{{ _gettext('Search') }}</label>
+          <div class="layui-input-block">
+            {%- set max_size = config.get('FLASK_ADMIN_SEARCH_SIZE_MAX', 100) %}
+            {%- set input_size = [[search_placeholder | length, 30] | max, max_size] | min %}
+            <input type="search" name="search" class="layui-input" size="{{ input_size }}" placeholder="{{ search_placeholder }}" />
+          </div>
+        </div>
+        {% endif %}
+        {% if filters or search_supported %}
+        <div class="layui-form-item" id="btn-form-filter" {% if not search_supported %}style="display: none; "{% endif %}>
+          <div class="layui-input-block">
+            {% if filters %}
+            <button class="layui-btn" lay-dropdown="{menus: [{% for k in filter_groups %}{txt: '{{ k }}', event: '{{ k }}'}, {% endfor %}]}" lay-filter="column-filter">
+              <span>{{ _gettext('Add Filter') }}</span>
+              <i class="layui-icon layui-icon-triangle-d"></i>
+            </button>
+            {% endif %}
+            <button type="submit" class="layui-btn" lay-submit lay-filter="form-filter">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+          </div>
+        </div>
+        {% endif %}
+      </form>
+
+      {% block model_menu_bar_after_filters %}{% endblock %}
+    {% endblock %}
+    </div>
+
+    <div class="layui-card-body">
+    {% block model_list_table %}
+      <script type="text/html" id="table-menu-bar">
+        {% if admin_view.can_create %}
+          <button class="layui-btn layui-btn-sm" lay-event="create" title="{{ _gettext('Create New Record') }}">{{ _gettext('Create') }}</button>
+        {% endif %}
+        {% if actions %}
+          {% for p in actions %}
+          <button class="layui-btn layui-btn-sm" lay-event="{{ p[0] }}">{{ _gettext(p[1]) }}</button>
+          {% endfor %}
+        {% endif %}
+      </script>
+      {% block list_row_actions_column scoped %}
+      {% if admin_view.column_display_actions %}
+      <script type="text/html" id="table-row-toolbar">
+        {% block list_row_actions scoped %}
+          {% for action in list_row_actions %}
+          {{ action.render_ctx(-1, None) }}
+          {% endfor %}
+        {% endblock %}
+      </script>
+      {%- endif -%}
+      {% endblock %}
+      <table class="layui-table" lay-data="{url: '{{ get_url('.ajax') }}', page: {limit: {{ page_size}}, limits: [10, 20, 50, 100]}, toolbar: '#table-menu-bar', defaultToolbar: ['filter',{% if admin_view.can_export %}'exports',{% endif %}'print'], id: 'table-model-list'}" lay-filter="table-model-list">
+        <thead>
+          <tr>
+            {% block list_header scoped %}
+              {% if actions %}
+              <th lay-data="{checkbox:true}"></th>
+              {% endif %}
+              {% for c, name in list_columns %}
+                {% set column = loop.index0 %}
+              <th lay-data="{field: '{{ c }}'}">
+                {% if admin_view.is_sortable(c) %}
+                  {% if sort_column == column %}
+                    <a href="{{ sort_url(column, True) }}" title="{{ _gettext('Sort by %(name)s', name=name) }}">
+                      {{ name }}
+                      {% if sort_desc %}
+                      <span class="layui-icon layui-icon-up"></span>
+                      {% else %}
+                      <span class="layui-icon layui-icon-down"></span>
+                      {% endif %}
+                    </a>
+                  {% else %}
+                    <a href="{{ sort_url(column) }}" title="{{ _gettext('Sort by %(name)s', name=name) }}">{{ name }}</a>
+                  {% endif %}
+                {% else %}
+                  {{ name }}
+                {% endif %}
+                {% if admin_view.column_descriptions.get(c) %}
+                  <a class="layui-icon layui-icon-about" title="{{ admin_view.column_descriptions[c] }}" href="javascript:void(0)" data-role="tooltip"></a>
+                {% endif %}
+              </th>
+              {% endfor %}
+              {% block list_row_actions_header %}
+                {% if admin_view.column_display_actions %}
+                <th lay-data="{width:178, align:'center', fixed: 'right', toolbar: '#table-row-toolbar'}"></th>
+                {% endif %}
+              {% endblock %}
+            {% endblock %}
+          </tr>
+        </thead>
+      </table>
+    {% endblock %}
+    </div>
+  </div>
+
+  {% block actions %}
+  {{ actionlib.form(actions, get_url('.action_view')) }}
+  {% endblock %}
+{% endblock %}
+
+{% block tail %}
+    {{ super() }}
+
+    {% if filter_groups %}
+      <div id="filter-groups-data" style="display:none;">{{ filter_groups|tojson|safe }}</div>
+      <div id="active-filters-data" style="display:none;">{{ active_filters|tojson|safe }}</div>
+    {% endif %}
+
+    {{ lib.form_js() }}
+    <script src="{{ admin_static.url(filename='layui/modules/dropdown.js') }}"></script>
+    <script>
+    layui.use(['table', 'layer', 'dropdown', 'jquery', 'form', 'laytpl'], function(){
+        //只要use就行，组件会自动渲染，如果是后期append到DOM结构中的元素需要再次渲染
+        var dropdown = layui.dropdown
+        , table = layui.table
+        , layer = layui.layer
+        , $ = layui.$
+        , form = layui.form
+        , laytpl = layui.laytpl;
+
+        {% if admin_view.create_model %}
+        function showEditModel(content, title) {
+          layer.open({
+            type: 1, 
+            area: "640px",
+            title: title,
+            content: content,
+            btn: ["{{ _gettext('Save') }}", "{{ _gettext('Cancel') }}"],
+            yes: function(index, layero) {
+              var form = $(layero).find("form");
+              $(form).data("layer-index", index);
+              var btn = $(layero).find("[lay-submit]");
+              btn.click();
+            }
+          }); 
+        }
+        {% endif %}
+
+        table.on('toolbar', function(obj) {
+          if (obj.event === 'create') {
+            {% if admin_view.create_modal %}
+              $.ajax({
+                async: true,
+                method: 'GET',
+                url: "{{ get_url('.create_view', url=return_url, modal=True) | safe }}",
+                success: function(result) {
+                  showEditModel(result, "{{ _gettext('Create New Record') }}");
+                },
+              });
+            {% else %}
+              window.location = "{{ get_url('.create_view', url=return_url) }}";
+            {% endif %}
+          } else if (event === 'delete') {
+            console.log(obj);
+          }
+        });
+        //监听工具条
+        table.on('tool(table-model-list)', function(obj){
+          var data = obj.data;
+          if(obj.event === 'view'){
+            window.location = "{{ get_url('.details_view', url=return_url) }}&id=" + data._id;
+          } else if(obj.event === 'edit'){
+            {% if admin_view.edit_modal %}
+              $.ajax({
+                async: true,
+                method: 'GET',
+                url: "{{ get_url('.edit_view', url=return_url, modal=True) | safe }}&id=" + data._id,
+                success: function(result) {
+                  showEditModel(result, "{{ _gettext('Edit Record') }} #" + data._id);
+                },
+              });
+            {% else %}
+            window.location = "{{ get_url('.edit_view', url=return_url) }}&id=" + data._id;
+            {% endif %}
+          } else if(obj.event === 'delete'){
+            layer.confirm("{{ _gettext('Are you sure you want to delete this record?') }}", function(index){
+              $.ajax({
+                async: true,
+                method: 'POST',
+                url: "{{ get_url('.ajax_delete_view') }}",
+                data: {
+                  id: data._id
+                },
+                success: function(result) {
+                  if (result.code == 0) {
+                    obj.del();
+                    layer.close(index);
+                  } else {
+                    layer.alert(result.msg);
+                  }
+                }
+              });
+            });
+          }
+        });
+
+        var filterGroups = {{ filter_groups | tojson }};
+        var filters = [];
+
+        function renderFilters() {
+          var tpl = $("#filter-option").html();
+          laytpl(tpl).render(filters, function(html) {
+            $("#form-filter .filter-item").remove();
+            $(html).insertBefore("#btn-form-filter");
+            $("#form-filter .input-filter").on("input", function(e) {
+              var idx = $(this).data("idx");
+              var value = $(this).val();
+              filters[idx].value = value;
+            });
+            $(".btn-remove-filter").on("click", function(e) {
+              var idx = $(this).data("idx");
+              filters.splice(idx, 1);
+              renderFilters();
+            });
+          });
+          filters.forEach(function(item, idx) {
+            if (item.value) {
+              $("#input-filter-" + idx).val(item.value);
+            }
+          });
+          form.render('select', 'form-filter');
+        }
+
+        dropdown.onFilter('column-filter', function(event) {
+          var filterGroup = filterGroups[event];
+          var data = {
+            name: event,
+            option: filterGroup[0].arg,
+            options: filterGroup
+          };
+          filters.push(data);
+          renderFilters();
+        });
+
+        form.on("select(select-filter)", function(data) {
+            var idx = $(data.elem).data("idx");
+            filters[idx].option = data.value;
+            $("#input-filter-" + idx).attr("name", "tpl" + idx + "_" + data.value);
+        });
+
+        form.on("submit(form-filter)", function(data) {
+            if (!data.form) {
+                return false;
+            }
+            const formData = new FormData(data.form);
+            const params = new URLSearchParams(formData);
+            table.reload('table-model-list', {
+              url: '{{ get_url('.ajax') }}?' + params,
+            });
+            return false;
+        });
+
+        form.on("submit(form-model)", function(data) {
+            if (!data.form) {
+                return false;
+            }
+            var index = $(data.form).data("layer-index");
+            const formData = new FormData(data.form);
+            console.log(new URLSearchParams(formData));
+            $.ajax({
+              method: $(data.form).attr("method"),
+              url: $(data.form).attr("action"),
+              data: formData,
+              processData: false,
+              contentType: false,
+              success: function(result) {
+                if (result.code === 0) {
+                  layer.close(index);
+                } else {
+                  if (result.errors) {
+                    for (var f in result.errors) {
+                      var field = result.errors[f];
+                      console.log(f, field);
+                      layer.alert(field.label + ": " + field.errors[0], {
+                        'title': result.msg
+                      });
+                      break;
+                    }
+                  } else {
+                    layer.alert(result.msg);
+                  }
+                }
+              }
+            });
+            return false;
+        });
+    });
+    </script>
+
+    {{ actionlib.script(_gettext('Please select at least one record.'),
+                        actions,
+                        actions_confirmation) }}
+{% endblock %}

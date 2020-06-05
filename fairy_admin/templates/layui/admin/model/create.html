@@ -1,0 +1,34 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/lib.html' as lib with context %}
+{% from 'admin/lib.html' import extra with context %} {# backward compatible #}
+
+{% block head %}
+  {{ super() }}
+  {{ lib.form_css() }}
+{% endblock %}
+
+{% block body %}
+  <div class="layui-card">
+    <div class="layui-card-header">
+      {% block navlinks %}
+      <ul class="nav nav-tabs">
+        <li>
+            <a href="{{ return_url }}">{{ _gettext('List') }}</a>
+        </li>
+        <li class="active">
+            <a href="javascript:void(0)">{{ _gettext('Create') }}</a>
+        </li>
+      </ul>
+      {% endblock %}
+    </div>
+    <div class="layui-card-body">
+    {% block create_form %}
+      {{ lib.render_form(form, return_url, extra(), form_opts) }}
+    {% endblock %}
+    </div>
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  {{ lib.form_js() }}
+{% endblock %}
