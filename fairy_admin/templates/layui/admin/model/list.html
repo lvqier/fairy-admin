@@ -9,6 +9,7 @@
   {{ super() }}
   {{ lib.form_css() }}
   <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/modules/dropdown.css') }}" />
+  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/modules/soulTable.css') }}" />
 {% endblock %}
 
 {% block body %}
@@ -99,46 +100,7 @@
       </script>
       {%- endif -%}
       {% endblock %}
-      <table class="layui-table" lay-data="{url: '{{ get_url('.ajax') }}', page: {limit: {{ page_size}}, limits: [10, 20, 50, 100]}, toolbar: '#table-menu-bar', defaultToolbar: ['filter',{% if admin_view.can_export %}'exports',{% endif %}'print'], id: 'table-model-list'}" lay-filter="table-model-list">
-        <thead>
-          <tr>
-            {% block list_header scoped %}
-              {% if actions %}
-              <th lay-data="{checkbox:true}"></th>
-              {% endif %}
-              {% for c, name in list_columns %}
-                {% set column = loop.index0 %}
-              <th lay-data="{field: '{{ c }}'}">
-                {% if admin_view.is_sortable(c) %}
-                  {% if sort_column == column %}
-                    <a href="{{ sort_url(column, True) }}" title="{{ _gettext('Sort by %(name)s', name=name) }}">
-                      {{ name }}
-                      {% if sort_desc %}
-                      <span class="layui-icon layui-icon-up"></span>
-                      {% else %}
-                      <span class="layui-icon layui-icon-down"></span>
-                      {% endif %}
-                    </a>
-                  {% else %}
-                    <a href="{{ sort_url(column) }}" title="{{ _gettext('Sort by %(name)s', name=name) }}">{{ name }}</a>
-                  {% endif %}
-                {% else %}
-                  {{ name }}
-                {% endif %}
-                {% if admin_view.column_descriptions.get(c) %}
-                  <a class="layui-icon layui-icon-about" title="{{ admin_view.column_descriptions[c] }}" href="javascript:void(0)" data-role="tooltip"></a>
-                {% endif %}
-              </th>
-              {% endfor %}
-              {% block list_row_actions_header %}
-                {% if admin_view.column_display_actions %}
-                <th lay-data="{width:178, align:'center', fixed: 'right', toolbar: '#table-row-toolbar'}"></th>
-                {% endif %}
-              {% endblock %}
-            {% endblock %}
-          </tr>
-        </thead>
-      </table>
+      <table id="table-model-list"></table>
     {% endblock %}
     </div>
   </div>
@@ -157,18 +119,64 @@
     {% endif %}
 
     {{ lib.form_js() }}
-    <script src="{{ admin_static.url(filename='layui/modules/dropdown.js') }}"></script>
     <script>
-    layui.use(['table', 'layer', 'dropdown', 'jquery', 'form', 'laytpl'], function(){
+    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'laytpl'], function(){
         //只要use就行，组件会自动渲染，如果是后期append到DOM结构中的元素需要再次渲染
         var dropdown = layui.dropdown
-        , table = layui.table
         , layer = layui.layer
+        , table = layui.table
+        , soulTable = layui.soulTable
         , $ = layui.$
         , form = layui.form
         , laytpl = layui.laytpl;
 
-        {% if admin_view.create_model %}
+        table.render({
+            elem: "#table-model-list",
+            url: "{{ get_url('.ajax') }}",
+            page: {
+                limit: {{ page_size}},
+                limits: [{{ page_size }}, 20, 50, 100]
+            },
+            toolbar: "#table-menu-bar",
+            defaultToolbar: [
+                "filter",
+                {% if admin_view.can_export %}"exports",{% endif %}
+                "print"
+            ],
+            cols: [[
+                {% if actions %}
+                {
+                    checkbox: true
+                },
+                {% endif %}
+                {% for c, name in list_columns %}
+                {%- set column = loop.index0 -%}
+                {
+                    field: "{{ c }}",
+                    sort: {{ 'true' if admin_view.is_sortable else 'false' }},
+                    title: "{{ name }}",
+                    filter: true,
+                    {% if admin_view.column_descriptions.get(c) %}
+                    // <a class="layui-icon layui-icon-about" title="{{ admin_view.column_descriptions[c] }}" href="javascript:void(0)" data-role="tooltip"></a>
+                    {% endif %}
+                },
+                {% endfor %}
+                {% if admin_view.column_display_actions %}
+                {
+                    width: 178,
+                    align: "center",
+                    fixed: "right",
+                    toolbar: "#table-row-toolbar"
+                }
+                {% endif %}
+            ]],
+            done: function() {
+                // 在 done 中开启
+                soulTable.render(this)
+            }
+        });
+
+        {% if admin_view.create_modal or admin_view.edit_modal %}
         function showEditModel(content, title, table_id=null) {
           layer.open({
             type: 1, 

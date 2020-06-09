@@ -77,6 +77,17 @@
 
     {% block tail_js %}
     <script src="//cdn.staticfile.org/layui/2.5.6/layui.min.js"></script>
+    <script>
+    layui.config({
+        base: "{{ admin_static.url(filename='layui/modules/') }}"
+    }).extend({                         
+        soulTable: 'soulTable/soulTable',
+        tableChild: 'soulTable/tableChild',
+        tableMerge: 'soulTable/tableMerge',
+        tableFilter: 'soulTable/tableFilter',
+        excel: 'soulTable/excel',
+    });;
+    </script>
     <script src="{{ admin_static.url(filename='admin/js/admin.js')}}"></script>
     {% if admin_view.extra_js %}
       {% for js_url in admin_view.extra_js %}
