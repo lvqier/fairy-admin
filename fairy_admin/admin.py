@@ -7,11 +7,14 @@ from flask_admin import Admin, expose, consts as admin_consts
 from flask_admin.model.base import ViewArgs, BaseModelView
 from flask_admin.form.widgets import Select2Widget
 from flask_admin.model.fields import AjaxSelectMultipleField
+from flask_admin.contrib.sqla import ModelView
 from flask_admin.contrib.sqla.fields import QuerySelectMultipleField
 from flask_sqlalchemy import Model
 from math import ceil
 from wtforms.widgets import TextArea, html_params
 from markupsafe import escape, Markup
+
+from .filters import SQLAlchemyFilter
 
 
 TextArea.tag = 'textarea'
@@ -43,20 +46,33 @@ def _repr(value):
     return value
 
 
+def _apply_filters(self, query, count_query, joins, count_joins, filters):
+    sqla_filter = SQLAlchemyFilter(self.model, query=query)
+    query = sqla_filter.apply(filters)
+    return query, count_query, joins, count_joins
+
+
+def _get_list_filter_args(self):
+    filter_sos = request.args.get('filterSos', None)
+    if filter_sos is None:
+        return None
+    return json.loads(filter_sos)
+
+
 def _ajax(self):
     view_args = ViewArgs(page=request.args.get('page', 1, type=int),
             page_size=request.args.get('limit', 0, type=int),
-            sort=request.args.get('sort', None, type=int),
+            sort=request.args.get('field', None, type=str),
             sort_desc=request.args.get('desc', None, type=int),
             search=request.args.get('search', None),
             filters=self._get_list_filter_args(),
             extra_args=dict([
                 (k, v) for k, v in request.args.items()
-                if k not in ('page', 'page_size', 'sort', 'desc', 'search', ) and
-                not k.startswith('flt')
+                if k not in ('page', 'limit', 'field', 'desc', 'search', ) and
+                not k.startswith('filterSos')
             ]))
 
-    sort_column = self._get_column_by_idx(view_args.sort)
+    sort_column = view_args.sort
     if sort_column is not None:
         sort_column = sort_column[0]
 
@@ -121,7 +137,6 @@ def _ajax_new(self):
 
 
 def _ajax_edit(self):
-
     if not self.can_edit:
         return jsonify(dict(code=403, msg='Can not edit'))
 
@@ -172,6 +187,8 @@ def _ajax_delete(self):
     return jsonify(dict(code=0, msg=''))
 
 
+ModelView._apply_filters = _apply_filters
+BaseModelView._get_list_filter_args = _get_list_filter_args
 BaseModelView.ajax = _ajax
 BaseModelView.ajax_create_view = _ajax_new
 BaseModelView.ajax_edit_view = _ajax_edit
