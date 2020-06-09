@@ -151,7 +151,7 @@
                     field: "{{ c }}",
                     sort: {{ 'true' if admin_view.is_sortable else 'false' }},
                     title: "{{ name }}",
-                    filter: {{ 'true' if name in filter_groups else 'false' }},
+                    filter: {{ 'true' if filter_groups and name in filter_groups else 'false' }},
                     {% if admin_view.column_descriptions.get(c) %}
                     // <a class="layui-icon layui-icon-about" title="{{ admin_view.column_descriptions[c] }}" href="javascript:void(0)" data-role="tooltip"></a>
                     {% endif %}
