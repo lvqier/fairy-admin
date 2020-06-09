@@ -132,6 +132,7 @@
 
         table.render({
             elem: "#table-model-list",
+            height: $(document).height() - $('#table-model-list').offset().top - 120,
             url: "{{ get_url('.ajax') }}",
             page: {
                 limit: {{ page_size}},

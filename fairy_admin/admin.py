@@ -78,9 +78,8 @@ def _ajax(self):
         item = {
             '_id': self.get_pk_value(row)
         }
-        for list_column in list_columns:
-            field = list_column[0]
-            item[field] = _repr(getattr(row, field))
+        for c, name in list_columns:
+            item[c] = _repr(self.get_list_value(None, row, c))
         page.append(item)
 
     result = {
