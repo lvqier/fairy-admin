@@ -10,14 +10,14 @@
 {% macro render_field(form, field, kwargs={}, caller=None) %}
   {% set direct_error = h.is_field_error(field.errors) %}
   <div class="layui-form-item{% if field.widget.tag == 'textarea'%} layui-form-text{% endif %}{{ ' has-error' if direct_error else '' }}">
-    <label for="{{ field.id }}" class="layui-form-label">{{ field.label.text }}
-        {% if h.is_required_form_field(field) %}
-          <strong style="color: red">&#42;</strong>
-        {%- else -%}
-          &nbsp;
-        {%- endif %}
+    <label for="{{ field.id }}" class="layui-form-label"{% if admin_view.form_label_width %} style="width: {{ admin_view.form_label_width }}"{% endif %}>{{ field.label.text }}
+    {% if h.is_required_form_field(field) %}
+      <strong style="color: red">&#42;</strong>
+    {%- else -%}
+      &nbsp;
+    {%- endif %}
     </label>
-    <div class="{{ kwargs.get('column_class', 'layui-input-block') }}">
+    <div class="{{ kwargs.get('column_class', 'layui-input-block') }}"{% if admin_view.form_label_width %} style="margin-left: {{ admin_view.form_label_width }}"{% endif %}>
       {% if field.control == 'datetime ' or field.widget.tag == 'datetime' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-input laydate') %}
       {% set _dummy = kwargs.setdefault('data-type', 'datetime') %}

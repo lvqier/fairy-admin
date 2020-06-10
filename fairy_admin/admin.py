@@ -216,6 +216,10 @@ expose('/ajax/delete/', methods=['POST'])(BaseModelView.ajax_delete_view)
 
 BaseModelView.can_export = True
 BaseModelView.page_size = 10
+BaseModelView.form_label_width = None
+'''
+form_label_width allows user to control width of label on the left side of form input
+'''
 
 
 # 将 select2 组件更换成 xm-select
