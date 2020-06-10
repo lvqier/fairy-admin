@@ -129,6 +129,22 @@
         {% endif %}
 
         {% if admin_view.create_modal or admin_view.edit_modal %}
+        function refreshForm() {
+            form.render();
+            $(".xm-select").each(function(i, e) {
+                var name = $(e).data("name");
+                var options = $(e).data("options");
+                xmSelect.render({
+                    el: e,
+                    name: name,
+                    data: options,
+                    template({ item, sels, name, value }){
+                        // Bugfix to xm-select, when name has patter <*>, it can not be displaed normally
+                        return $('<div/>').text(name).html();
+                    },
+                });
+            });
+        }
         function showEditModel(content, title, tableId=null) {
           layer.open({
             type: 1, 
@@ -143,7 +159,7 @@
               btn.click();
             }
           }); 
-          form.render();
+          refreshForm();
         }
         {% endif %}
 
