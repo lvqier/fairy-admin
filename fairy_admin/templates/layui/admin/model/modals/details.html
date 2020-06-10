@@ -2,23 +2,20 @@
 {% import 'admin/lib.html' as lib with context %}
 
 {% block body %}
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    {% block header_text %}
-      <h3>{{ _gettext('View Record') + ' #' + request.args.get('id') }}</h3>
-    {% endblock %}
-  </div>
-
-  <div class="modal-body">
+  <div class="layui-fluid" style="padding: 20px">
   {% block details_search %}
-    <div class="input-group fa_filter_container col-lg-6">
-      <span class="input-group-addon">{{ _gettext('Filter') }}</span>
-      <input id="fa_filter" type="text" class="form-control">
+    <form class="layui-form layui-form-pane">
+    <div class="layui-form-item">
+      <span class="layui-form-label">{{ _gettext('Filter') }}</span>
+      <div class="layui-input-block">
+        <input id="fa_filter" type="text" class="layui-input" />
+      </div>
     </div>
+    </form>
   {% endblock %}
 
   {% block details_table %}
-    <table class="table table-hover table-bordered searchable">
+    <table class="layui-table searchable">
     {% for c, name in details_columns %}
       <tr>
         <td>
@@ -35,6 +32,4 @@
 {% endblock %}
 
 {% block tail %}
-  <script src="{{ admin_static.url(filename='admin/js/details_filter.js', v='1.0.0') }}"></script>
-  <script src="{{ admin_static.url(filename='admin/js/bs3_modal.js', v='1.0.0') }}"></script>
 {% endblock %}

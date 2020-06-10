@@ -47,16 +47,22 @@ def _repr(value):
 
 
 def _apply_filters(self, query, count_query, joins, count_joins, filters):
-    sqla_filter = SQLAlchemyFilter(self.model, query=query)
-    query = sqla_filter.apply(filters)
-    return query, count_query, joins, count_joins
+    if self.admin.template_mode == 'layui':
+        sqla_filter = SQLAlchemyFilter(self.model, query=query)
+        query = sqla_filter.apply(filters)
+        return query, count_query, joins, count_joins
+    else:
+        return self._old_apply_filters(query, count_query, joins, count_joins, filters)
 
 
 def _get_list_filter_args(self):
-    filter_sos = request.args.get('filterSos', None)
-    if filter_sos is None:
-        return None
-    return json.loads(filter_sos)
+    if self.admin.template_mode == 'layui':
+        filter_sos = request.args.get('filterSos', None)
+        if filter_sos is None:
+            return None
+        return json.loads(filter_sos)
+    else:
+        return self._old_get_list_filter_args()
 
 
 def _ajax(self):
@@ -68,8 +74,8 @@ def _ajax(self):
             filters=self._get_list_filter_args(),
             extra_args=dict([
                 (k, v) for k, v in request.args.items()
-                if k not in ('page', 'limit', 'field', 'desc', 'search', ) and
-                not k.startswith('filterSos')
+                if k not in ('page', 'limit', 'field', 'desc', 'search', 'filterSos') and
+                not k.startswith('flt')
             ]))
 
     sort_column = view_args.sort
@@ -187,7 +193,9 @@ def _ajax_delete(self):
     return jsonify(dict(code=0, msg=''))
 
 
+ModelView._old_apply_filters = ModelView._apply_filters
 ModelView._apply_filters = _apply_filters
+BaseModelView._old_get_list_filter_args = BaseModelView._get_list_filter_args
 BaseModelView._get_list_filter_args = _get_list_filter_args
 BaseModelView.ajax = _ajax
 BaseModelView.ajax_create_view = _ajax_new

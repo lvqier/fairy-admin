@@ -1,6 +1,6 @@
 # Fairy Admin
 
-This is an shell package which add [Layui](https://www.layui.com/) based template to [Flask Admin](https://github.com/flask-admin/flask-admin)
+This is a shell package which add [Layui](https://www.layui.com/) based template to [Flask Admin](https://github.com/flask-admin/flask-admin)
 
 
 ## Install

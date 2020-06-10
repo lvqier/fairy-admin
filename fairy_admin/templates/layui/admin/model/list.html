@@ -15,66 +15,7 @@
 {% block body %}
   <div class="layui-card">
     <div class="layui-card-header layui-card-header-auto">
-    {% block model_menu_bar %}
-      {% block model_menu_bar_before_filters %}{% endblock %}
-      {% raw %}
-      <script id="filter-option" type="text/html">
-        {{# layui.each(d, function(filter_idx, filter) { }}
-        <div class="layui-form-item filter-item" id="filter-item-{{ filter_idx }}">
-          <label class="layui-form-label">{{ filter.name }}</label>
-          <div class="layui-input-inline">
-            <select lay-search data-idx={{ filter_idx }} required lay-verify="required" lay-filter="select-filter">
-            {{# layui.each(filter.options, function(idx, item) { }}
-              {{# if (item.arg === filter.option) { }}
-              <option value="{{ item.arg }}" selected>{{ item.operation }}</option>
-              {{# } else { }}
-              <option value="{{ item.arg }}">{{ item.operation }}</option>
-              {{# } }}
-            {{# }); }}
-            </select>
-          </div>
-          <div class="layui-input-inline">
-            <input id="input-filter-{{ filter_idx }}" type="text" class="layui-input input-filter" data-idx="{{ filter_idx }}" name="tpl{{ filter_idx }}_{{ filter.option }}" />
-          </div>
-          <div class="layui-input-inline">
-            <button class="layui-btn layui-btn-primary btn-remove-filter" data-idx={{ filter_idx }}>
-              <i class="layui-icon layui-icon-close"></i>
-              <span>移除</span>
-            </button>
-          </div>
-        </div>
-        {{# }); }}
-      </script>
-      {% endraw %}
-      <form class="layui-form" lay-filter="form-filter" id="form-filter">
-        {% if search_supported %}
-        <div class="layui-form-item">
-          <label class="layui-form-label">{{ _gettext('Search') }}</label>
-          <div class="layui-input-block">
-            {%- set max_size = config.get('FLASK_ADMIN_SEARCH_SIZE_MAX', 100) %}
-            {%- set input_size = [[search_placeholder | length, 30] | max, max_size] | min %}
-            <input type="search" name="search" class="layui-input" size="{{ input_size }}" placeholder="{{ search_placeholder }}" />
-          </div>
-        </div>
-        {% endif %}
-        {% if filters or search_supported %}
-        <div class="layui-form-item" id="btn-form-filter" {% if not search_supported %}style="display: none; "{% endif %}>
-          <div class="layui-input-block">
-            {% if filters %}
-            <button class="layui-btn" lay-dropdown="{menus: [{% for k in filter_groups %}{txt: '{{ k }}', event: '{{ k }}'}, {% endfor %}]}" lay-filter="column-filter">
-              <span>{{ _gettext('Add Filter') }}</span>
-              <i class="layui-icon layui-icon-triangle-d"></i>
-            </button>
-            {% endif %}
-            <button type="submit" class="layui-btn" lay-submit lay-filter="form-filter">立即提交</button>
-            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
-          </div>
-        </div>
-        {% endif %}
-      </form>
-
-      {% block model_menu_bar_after_filters %}{% endblock %}
-    {% endblock %}
+    {% block model_menu_bar %}{% endblock %}
     </div>
 
     <div class="layui-card-body">
@@ -100,7 +41,7 @@
       </script>
       {%- endif -%}
       {% endblock %}
-      <table id="table-model-list"></table>
+      <table id="table-model-list" lay-filter="table-model-list"></table>
     {% endblock %}
     </div>
   </div>
@@ -172,8 +113,23 @@
             }
         });
 
+        {% if admin_view.details_modal %}
+        function showViewModel(content, title, tableId=null) {
+            var index = layer.open({
+                type: 1, 
+                area: "640px",
+                title: title,
+                content: content,
+                btn: ["{{ _gettext('Done') }}"],
+                yes: function(index, layero) {
+                    layer.close(index);
+                }
+            }); 
+        }
+        {% endif %}
+
         {% if admin_view.create_modal or admin_view.edit_modal %}
-        function showEditModel(content, title, table_id=null) {
+        function showEditModel(content, title, tableId=null) {
           layer.open({
             type: 1, 
             area: "640px",
@@ -190,7 +146,7 @@
         }
         {% endif %}
 
-        table.on('toolbar', function(obj) {
+        table.on('toolbar(table-model-list)', function(obj) {
           if (obj.event === 'create') {
             {% if admin_view.create_modal %}
               $.ajax({
@@ -234,43 +190,54 @@
 
         //监听工具条
         table.on('tool(table-model-list)', function(obj){
-          var data = obj.data;
-          if(obj.event === 'view'){
-            window.location = "{{ get_url('.details_view', url=return_url) }}&id=" + data._id;
-          } else if(obj.event === 'edit'){
-            {% if admin_view.edit_modal %}
+            var data = obj.data;
+            if(obj.event === 'view'){
+              {% if admin_view.details_modal %}
               $.ajax({
-                async: true,
-                method: 'GET',
-                url: "{{ get_url('.edit_view', url=return_url, modal=True) | safe }}&id=" + data._id,
-                success: function(result) {
-                  showEditModel(result, "{{ _gettext('Edit Record') }} #" + data._id);
-                },
-              });
-            {% else %}
-            window.location = "{{ get_url('.edit_view', url=return_url) }}&id=" + data._id;
-            {% endif %}
-          } else if(obj.event === 'delete'){
-            layer.confirm("{{ _gettext('Are you sure you want to delete this record?') }}", function(index){
-              $.ajax({
-                async: true,
-                method: 'POST',
-                url: "{{ get_url('.ajax_delete_view') }}",
-                contentType : "application/json",
-                data: JSON.stringify({
-                  ids: [data._id]
-                }),
-                success: function(result) {
-                  if (result.code === 0) {
-                    obj.del();
-                    layer.close(index);
-                  } else {
-                    layer.alert(result.msg);
+                  async: true,
+                  method: "GET",
+                  url: "{{ get_url('.details_view', url=return_url, modal=True) | safe }}&id=" + data._id,
+                  success: function(result) {
+                      showViewModel(result, "{{ _gettext('View Record') }} #" + data._id);
                   }
-                }
               });
-            });
-          }
+              {% else %}
+              window.location = "{{ get_url('.details_view', url=return_url) }}&id=" + data._id;
+              {% endif %}
+          } else if(obj.event === 'edit'){
+              {% if admin_view.edit_modal %}
+              $.ajax({
+                  async: true,
+                  method: "GET",
+                  url: "{{ get_url('.edit_view', url=return_url, modal=True) | safe }}&id=" + data._id,
+                  success: function(result) {
+                      showEditModel(result, "{{ _gettext('Edit Record') }} #" + data._id);
+                  },
+              });
+              {% else %}
+              window.location = "{{ get_url('.edit_view', url=return_url) }}&id=" + data._id;
+              {% endif %}
+          } else if(obj.event === 'delete'){
+              layer.confirm("{{ _gettext('Are you sure you want to delete this record?') }}", function(index){
+                  $.ajax({
+                      async: true,
+                      method: "POST",
+                      url: "{{ get_url('.ajax_delete_view') }}",
+                      contentType : "application/json",
+                      data: JSON.stringify({
+                          ids: [data._id]
+                      }),
+                      success: function(result) {
+                          if (result.code === 0) {
+                              obj.del();
+                              layer.close(index);
+                          } else {
+                              layer.alert(result.msg);
+                          }
+                      }
+                  });
+              });
+            }
         });
 
         var filterGroups = {{ filter_groups | tojson }};
@@ -297,10 +264,10 @@
               $("#input-filter-" + idx).val(item.value);
             }
           });
-          form.render('select', 'form-filter');
+          form.render("select", "form-filter");
         }
 
-        dropdown.onFilter('column-filter', function(event) {
+        dropdown.onFilter("column-filter", function(event) {
           var filterGroup = filterGroups[event];
           var data = {
             name: event,
@@ -323,8 +290,8 @@
             }
             const formData = new FormData(data.form);
             const params = new URLSearchParams(formData);
-            table.reload('table-model-list', {
-              url: '{{ get_url('.ajax') }}?' + params,
+            table.reload("table-model-list", {
+              url: "{{ get_url('.ajax') }}?" + params,
             });
             return false;
         });
@@ -343,14 +310,14 @@
               contentType: false,
               success: function(result) {
                 if (result.code === 0) {
-                  table.reload('table-model-list');
+                  table.reload("table-model-list");
                   layer.close(index);
                 } else {
                   if (result.errors) {
                     for (var f in result.errors) {
                       var field = result.errors[f];
                       layer.alert(field.label + ": " + field.errors[0], {
-                        'title': result.msg
+                        "title": result.msg
                       });
                       break;
                     }
@@ -364,8 +331,4 @@
         });
     });
     </script>
-
-    {{ actionlib.script(_gettext('Please select at least one record.'),
-                        actions,
-                        actions_confirmation) }}
 {% endblock %}

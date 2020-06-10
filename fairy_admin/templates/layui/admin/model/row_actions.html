@@ -11,7 +11,7 @@
 {% endmacro %}
 
 {% macro view_row_popup(action, row_id, row) %}
-  {{ lib.add_modal_button(url=get_url('.details_view', id=row_id, url=return_url, modal=True), title=action.title, content='<span class="layui-icon layui-icon-tips"></span>') }}
+<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="view">查看</a>
 {% endmacro %}
 
 {% macro edit_row(action, row_id, row) %}
