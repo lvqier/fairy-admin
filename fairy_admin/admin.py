@@ -5,22 +5,29 @@ import json
 from flask import Blueprint, request, abort, jsonify
 from flask_admin import Admin, expose, consts as admin_consts
 from flask_admin.model.base import ViewArgs, BaseModelView
-from flask_admin.form.widgets import Select2Widget
+from flask_admin.form.widgets import Select2Widget, DateTimePickerWidget, DatePickerWidget
 from flask_admin.model.fields import AjaxSelectMultipleField
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.contrib.sqla.fields import QuerySelectMultipleField
 from flask_sqlalchemy import Model
 from math import ceil
 from wtforms.widgets import TextArea, html_params
+from wtforms.fields import DateTimeField, DateField
 from markupsafe import escape, Markup
 
 from .filters import SQLAlchemyFilter
 
 
-TextArea.tag = 'textarea'
-admin_consts.ICON_TYPE_LAYUI = 'layui'
-
 CWD = os.path.dirname(os.path.abspath(__file__))
+
+TextArea.tag = 'textarea'
+Select2Widget.tag = 'xm-select'
+DateTimePickerWidget.tag = 'datetime'
+DateTimeField.control = 'datetime'
+DatePickerWidget.tag = 'date'
+DateField.control = 'date'
+
+admin_consts.ICON_TYPE_LAYUI = 'layui'
 
 
 class FairyAdmin(Admin):
@@ -228,7 +235,6 @@ def _render_xm_select(self, field, options=None, **kwargs):
     return Markup('<div %s></div>' % html_params(**params))
 
 Select2Widget.__call__ = _render_xm_select
-Select2Widget.tag = 'xm-select'
 
 
 # 适配 xm-select 采用','分割的字段提交方式

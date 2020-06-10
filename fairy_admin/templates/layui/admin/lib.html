@@ -18,7 +18,13 @@
         {%- endif %}
     </label>
     <div class="{{ kwargs.get('column_class', 'layui-input-block') }}">
-      {% if field.widget.input_type == 'text' %}
+      {% if field.control == 'datetime ' or field.widget.tag == 'datetime' %}
+      {% set _dummy = kwargs.setdefault('class', 'layui-input laydate') %}
+      {% set _dummy = kwargs.setdefault('data-type', 'datetime') %}
+      {% elif field.control == 'date' or field.widget.tag == 'date' %}
+      {% set _dummy = kwargs.setdefault('class', 'layui-input laydate') %}
+      {% set _dummy = kwargs.setdefault('data-type', 'date') %}
+      {% elif field.widget.input_type == 'text' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-input') %}
       {% elif field.widget.input_type == 'checkbox' %}
       {% set _dummy = kwargs.setdefault('title', field.label.text) %}
@@ -144,8 +150,10 @@
   {% endif %}
   <script src="{{ admin_static.url(filename='layui/modules/xm-select.js') }}"></script>
   <script>
-    layui.use(["jquery"], function() {
-        var $ = layui.$;
+    layui.use(["jquery", "laydate"], function() {
+        var $ = layui.$
+        , laydate = layui.laydate;
+
         $(".xm-select").each(function(i, e) {
             var name = $(e).data("name");
             var options = $(e).data("options");
@@ -157,6 +165,13 @@
                     // Bugfix to xm-select, when name has patter <*>, it can not be displaed normally
                     return $('<div/>').text(name).html();
                 },
+            });
+        });
+        $("input.laydate").each(function(i, e) {
+            var type = $(e).data("type");
+            laydate.render({
+                elem: e,
+                type: type
             });
         });
     });

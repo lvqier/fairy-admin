@@ -56,7 +56,7 @@
 
     {{ lib.form_js() }}
     <script>
-    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'laytpl'], function(){
+    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'laydate', 'laytpl'], function(){
         //只要use就行，组件会自动渲染，如果是后期append到DOM结构中的元素需要再次渲染
         var dropdown = layui.dropdown
         , layer = layui.layer
@@ -64,6 +64,7 @@
         , soulTable = layui.soulTable
         , $ = layui.$
         , form = layui.form
+        , laydate = layui.laydate
         , laytpl = layui.laytpl;
 
         table.render({
@@ -142,6 +143,13 @@
                         // Bugfix to xm-select, when name has patter <*>, it can not be displaed normally
                         return $('<div/>').text(name).html();
                     },
+                });
+            });
+            $("input.laydate").each(function(i, e) {
+                var type = $(e).data("type");
+                laydate.render({
+                    elem: e,
+                    type: type
                 });
             });
         }
