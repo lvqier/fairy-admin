@@ -20,6 +20,8 @@
     <div class="{{ kwargs.get('column_class', 'layui-input-block') }}">
       {% if field.widget.input_type == 'text' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-input') %}
+      {% elif field.widget.input_type == 'checkbox' %}
+      {% set _dummy = kwargs.setdefault('title', field.label.text) %}
       {% elif field.widget.tag == 'textarea' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-textarea') %}
       {% endif %}
@@ -106,7 +108,6 @@
 {% endmacro %}
 
 {% macro form_css() %}
-  <link href="{{ admin_static.url(filename='vendor/bootstrap-daterangepicker/daterangepicker-bs3.css', v='1.3.22') }}" rel="stylesheet">
   {% if config.MAPBOX_MAP_ID %}
   <link href="{{ admin_static.url(filename='vendor/leaflet/leaflet.css', v='1.0.2') }}" rel="stylesheet">
   <link href="{{ admin_static.url(filename='vendor/leaflet/leaflet.draw.css', v='0.4.6') }}" rel="stylesheet">
