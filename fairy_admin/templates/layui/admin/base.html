@@ -60,6 +60,8 @@
       </div>
       <div class="layui-body">
         <div class="layui-show">
+          {% block breadcrumb %}
+          {% endblock %}
           <div class="layui-fluid">
           {% block messages %}
           {{ layout.messages() }}

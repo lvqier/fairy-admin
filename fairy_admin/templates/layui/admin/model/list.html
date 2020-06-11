@@ -12,6 +12,16 @@
   <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/modules/soulTable.css') }}" />
 {% endblock %}
 
+{% block breadcrumb %}
+<div class="layui-fluid breadcrumb">
+  {%- set current_name = _gettext('List') %}
+  {%- if count %}
+  {% set current_name = current_name + ' (' + count | string + ')' %}
+  {% endif %}
+  {{ layout.breadcrumb(current=current_name) }}
+</div>
+{% endblock %}
+
 {% block body %}
   <div class="layui-card">
     <div class="layui-card-header layui-card-header-auto">

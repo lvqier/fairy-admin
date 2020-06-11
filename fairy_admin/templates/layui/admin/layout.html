@@ -89,6 +89,35 @@
   {% endfor %}
 {% endmacro %}
 
+{% macro breadcrumb_items(menu_root, current=None)%}
+  {%- for item in menu_root %}
+  {% if item._view == admin_view.admin.index_view %}
+  <a href="{{ item.get_url() }}">{{ item.name }}</a>
+  {% elif item.is_category() %}
+  {% set children = item.get_children() %}
+  {%- if children %}
+  {% call(menu_item) breadcrumb_items(children) %}
+  {% if menu_item %}
+  <a><cite>{{ item.name }}</cite></a>
+  {% endif %}
+  {% endcall %}
+  {% endif %}
+  {% elif item.is_active(admin_view) %}
+  {% if caller %}{{ caller(item) }}{% endif %}
+  <a href="{{ item.get_url() }}">{{ item.name }}</a>
+  {% endif %}
+  {% endfor %}
+  {% if current is not none %}
+  <a><cite>{{ current }}</cite></a>
+  {% endif %}
+{% endmacro %}
+
+{% macro breadcrumb(current=None) %}
+  <span class="layui-breadcrumb">
+  {{ breadcrumb_items(admin_view.admin.menu(), current=current ) }}
+  </span>
+{% endmacro %}
+
 {% macro messages() %}
   {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}

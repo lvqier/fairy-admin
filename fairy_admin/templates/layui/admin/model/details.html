@@ -1,6 +1,13 @@
 {% extends 'admin/master.html' %}
 {% import 'admin/lib.html' as lib with context %}
 
+{% block breadcrumb %}
+<div class="layui-fluid breadcrumb">
+  {%- set current_name = _gettext('Details') + ' #' + request.args.get('id') %}
+  {{ layout.breadcrumb(current=current_name) }}
+</div>
+{% endblock %}
+
 {% block body %}
   {% block navlinks %}
   <ul class="nav nav-tabs">

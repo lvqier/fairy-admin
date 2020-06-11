@@ -7,6 +7,13 @@
   {{ lib.form_css() }}
 {% endblock %}
 
+{% block breadcrumb %}
+<div class="layui-fluid breadcrumb">
+  {%- set current_name = _gettext('Edit') + ' #' + request.args.get('id') %}
+  {{ layout.breadcrumb(current=current_name) }}
+</div>
+{% endblock %}
+
 {% block body %}
   {% block navlinks %}
   <ul class="nav nav-tabs">
