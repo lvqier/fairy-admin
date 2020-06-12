@@ -7,21 +7,21 @@
 {% endmacro %}
 
 {% macro view_row(action, row_id, row) %}
-<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="view">查看</a>
+<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="view">{{ _gettext('View') }}</a>
 {% endmacro %}
 
 {% macro view_row_popup(action, row_id, row) %}
-<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="view">查看</a>
+<a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="view">{{ _gettext('View') }}</a>
 {% endmacro %}
 
 {% macro edit_row(action, row_id, row) %}
-<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+<a class="layui-btn layui-btn-xs" lay-event="edit">{{ _gettext('Edit') }}</a>
 {% endmacro %}
 
 {% macro edit_row_popup(action, row_id, row) %}
-<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+<a class="layui-btn layui-btn-xs" lay-event="edit">{{ _gettext('Edit') }}</a>
 {% endmacro %}
 
 {% macro delete_row(action, row_id, row) %}
-<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</a>
+<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">{{ _gettext('Delete') }}</a>
 {% endmacro %}

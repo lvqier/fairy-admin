@@ -30,8 +30,6 @@
       {% set _dummy = kwargs.setdefault('title', field.label.text) %}
       {% elif field.widget.tag == 'textarea' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-textarea') %}
-      {% elif field.widget.tag == 'upload-image' %}
-      {% set _dummy = kwargs.setdefault('class', 'layui-btn upload-image') %}
       {% endif %}
       {{ field(**kwargs)|safe }}
       {% if field.description %}
