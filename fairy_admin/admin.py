@@ -3,6 +3,8 @@ import os
 import json
 import uuid
 
+from datetime import datetime
+
 from flask import Blueprint, request, url_for, abort, jsonify, send_from_directory
 from flask_admin import BaseView, Admin, expose, consts as admin_consts
 from flask_admin.helpers import get_url
@@ -51,9 +53,18 @@ class FairyAdmin(Admin):
         blueprint = Blueprint('fairy_admin', __name__, template_folder=template_folder, static_folder='static')
         app.register_blueprint(blueprint, url_prefix='/admin/fairy')
 
-        for view in self._views:
-            if hasattr(view, 'init_app'):
-                view.init_app(app)
+    def add_view(self, view):
+        super(FairyAdmin, self).add_view(view)
+        if isinstance(view, BaseModelView):
+            formatter = view.column_type_formatters.get(datetime)
+            if formatter is None:
+                view.column_type_formatters[datetime] = self.datetime_formatter
+
+            print(view.column_type_formatters)
+
+    def datetime_formatter(self, view, value):
+        datetime_format = getattr(view, 'datetime_format', '%Y-%m-%d %H:%M:%S')
+        return value.strftime(datetime_format)
 
 
 def _repr(value):
@@ -241,7 +252,7 @@ def _ajax_upload(self, field):
     url = get_url(endpoint, filename=relative_file)
     # url = url_for('.static', field=field_name, filename=relative_file, _external=True)
     data = {
-        'filename': filename,
+        'filename': file.filename,
         'title': field_name,
         'src': url,
         'path': relative_file
@@ -267,6 +278,13 @@ def _static(self, field, filename):
     return send_from_directory(base_path, filename)
 
 
+def _is_editable(self, item):
+    return True
+
+def _is_deletable(self, item):
+    return True
+
+
 ModelView._old_apply_filters = ModelView._apply_filters
 ModelView._apply_filters = _apply_filters
 BaseModelView._old_get_list_filter_args = BaseModelView._get_list_filter_args
@@ -277,6 +295,8 @@ BaseModelView.ajax_edit_view = _ajax_edit
 BaseModelView.ajax_delete_view = _ajax_delete
 BaseModelView.ajax_upload = _ajax_upload
 BaseModelView.static = _static
+BaseModelView.is_editable = _is_editable
+BaseModelView.is_deletable = _is_deletable
 
 expose('/ajax/')(BaseModelView.ajax)
 expose('/ajax/new/', methods=['POST'])(BaseModelView.ajax_create_view)

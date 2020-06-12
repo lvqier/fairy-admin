@@ -26,7 +26,7 @@
     {% for c, name in details_columns %}
       <tr>
         <td>
-          <b>{{ name }}</b>
+          <b{% if admin_view.form_label_width %} style="display: inline-block; width: {{ admin_view.form_label_width }}"{% endif %}>{{ name }}</b>
         </td>
         <td>
         {{ get_value(model, c) }}

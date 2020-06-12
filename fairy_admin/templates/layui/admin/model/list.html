@@ -84,7 +84,9 @@
             url: "{{ get_url('.ajax') }}",
             page: {
                 limit: {{ page_size}},
-                limits: [{{ page_size }}, 20, 50, 100]
+                limits: [{{ page_size }}, 20, 50, 100],
+                prev: "{{ _gettext('Prev') }}",
+                next: "{{ _gettext('Next') }}",
             },
             toolbar: "#table-menu-bar",
             defaultToolbar: [

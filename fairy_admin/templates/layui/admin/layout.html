@@ -13,6 +13,8 @@
   {% elif icon_type == 'image-url' %}
     <img src="{{ icon_value }}" alt="menu image">
   {% endif %}
+{% elif item.is_category() %}
+  <i class="layui-icon layui-icon-template-1"></i>
 {% else %}
   <i class="layui-icon layui-icon-circle"></i>
 {% endif %}
@@ -79,7 +81,7 @@
     {% set class_name = item.get_class_name() %}
     {% if item.is_accessible() and item.is_visible() %}
       <li class="layui-nav-item{% if class_name %} {{ class_name }}{% endif %}">
-        <a href="{{ item.get_url() }}">
+        <a href="{{ item.get_url() }}"{% if item.target %} target="{{ item.target}}"{% endif %}>
           {{ menu_icon(item) }}
           <cite>{{ item.name }}</cite>
         </a>
