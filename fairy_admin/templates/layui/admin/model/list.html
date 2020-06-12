@@ -162,6 +162,43 @@
                     type: type
                 });
             });
+            $("button.btn-upload-file").each(function(i, e) {
+                var upload_url = $(e).data("upload-url");
+                upload.render({
+                    elem: e,
+                    url: upload_url,
+                    done: function(res) {
+                        if (res.code !== 0) {
+                            layer.alert(res.msg);
+                        }
+                        var data = res.data;
+                        $(e).parent().children("a.file-preview").text(data.filename);
+                        $(e).parent().children("a.file-preview").attr("href", data.src + "?attachment=1");
+                        $(e).parent().children("input.upload-input").val(data.path);
+                    },
+                    error: function(res) {
+                        layer.alert(res);
+                    }
+                });
+            });
+            $("button.btn-upload-image").each(function(i, e) {
+                var upload_url = $(e).data("upload-url");
+                upload.render({
+                    elem: e,
+                    url: upload_url,
+                    done: function(res) {
+                        if (res.code !== 0) {
+                            layer.alert(res.msg);
+                        }
+                        var data = res.data;
+                        $(e).parent().children("img.image-preview").attr("src", data.src);
+                        $(e).parent().children("input.upload-input").val(data.path);
+                    },
+                    error: function(res) {
+                        layer.alert(res);
+                    }
+                });
+            });
         }
         function showEditModel(content, title, tableId=null) {
           layer.open({

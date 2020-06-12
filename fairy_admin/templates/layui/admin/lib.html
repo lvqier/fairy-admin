@@ -10,14 +10,14 @@
 {% macro render_field(form, field, kwargs={}, caller=None) %}
   {% set direct_error = h.is_field_error(field.errors) %}
   <div class="layui-form-item{% if field.widget.tag == 'textarea'%} layui-form-text{% endif %}{{ ' has-error' if direct_error else '' }}">
-    <label for="{{ field.id }}" class="layui-form-label"{% if admin_view.form_label_width %} style="width: {{ admin_view.form_label_width }}"{% endif %}>{{ field.label.text }}
+    <label for="{{ field.id }}" class="layui-form-label"{% if admin_view.form_label_width and field.widget.tag != 'textarea' %} style="width: {{ admin_view.form_label_width }}"{% endif %}>{{ field.label.text }}
     {% if h.is_required_form_field(field) %}
       <strong style="color: red">&#42;</strong>
     {%- else -%}
       &nbsp;
     {%- endif %}
     </label>
-    <div class="{{ kwargs.get('column_class', 'layui-input-block') }}"{% if admin_view.form_label_width %} style="margin-left: {{ admin_view.form_label_width }}"{% endif %}>
+    <div class="{{ kwargs.get('column_class', 'layui-input-block') }}"{% if admin_view.form_label_width and field.widget.tag != 'textarea' %} style="margin-left: {{ admin_view.form_label_width }}"{% endif %}>
       {% if field.control == 'datetime ' or field.widget.tag == 'datetime' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-input laydate') %}
       {% set _dummy = kwargs.setdefault('data-type', 'datetime') %}
@@ -30,6 +30,8 @@
       {% set _dummy = kwargs.setdefault('title', field.label.text) %}
       {% elif field.widget.tag == 'textarea' %}
       {% set _dummy = kwargs.setdefault('class', 'layui-textarea') %}
+      {% elif field.widget.tag == 'upload-image' %}
+      {% set _dummy = kwargs.setdefault('class', 'layui-btn upload-image') %}
       {% endif %}
       {{ field(**kwargs)|safe }}
       {% if field.description %}
@@ -148,9 +150,11 @@
   {% endif %}
   <script src="{{ admin_static.url(filename='layui/modules/xm-select.js') }}"></script>
   <script>
-    layui.use(["jquery", "laydate"], function() {
-        var $ = layui.$
-        , laydate = layui.laydate;
+    layui.use(["layer", "jquery", "laydate", "upload"], function() {
+        var layer = layui.layer
+        , $ = layui.$
+        , laydate = layui.laydate
+        , upload = layui.upload;
 
         $(".xm-select").each(function(i, e) {
             var name = $(e).data("name");
@@ -170,6 +174,43 @@
             laydate.render({
                 elem: e,
                 type: type
+            });
+        });
+        $("button.btn-upload-file").each(function(i, e) {
+            var upload_url = $(e).data("upload-url");
+            upload.render({
+                elem: e,
+                url: upload_url,
+                done: function(res) {
+                    if (res.code !== 0) {
+                        layer.alert(res.msg);
+                    }
+                    var data = res.data;
+                    $(e).parent().children("a.file-preview").text(data.filename);
+                    $(e).parent().children("a.file-preview").attr("href", data.src + "?attachment=1");
+                    $(e).parent().children("input.upload-input").val(data.path);
+                },
+                error: function(res) {
+                    layer.alert(res);
+                }
+            });
+        });
+        $("button.btn-upload-image").each(function(i, e) {
+            var upload_url = $(e).data("upload-url");
+            upload.render({
+                elem: e,
+                url: upload_url,
+                done: function(res) {
+                    if (res.code !== 0) {
+                        layer.alert(res.msg);
+                    }
+                    var data = res.data;
+                    $(e).parent().children("img.image-preview").attr("src", data.src);
+                    $(e).parent().children("input.upload-input").val(data.path);
+                },
+                error: function(res) {
+                    layer.alert(res);
+                }
             });
         });
     });

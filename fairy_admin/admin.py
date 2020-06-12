@@ -1,9 +1,11 @@
 
 import os
 import json
+import uuid
 
-from flask import Blueprint, request, abort, jsonify
-from flask_admin import Admin, expose, consts as admin_consts
+from flask import Blueprint, request, url_for, abort, jsonify, send_from_directory
+from flask_admin import BaseView, Admin, expose, consts as admin_consts
+from flask_admin.helpers import get_url
 from flask_admin.model.base import ViewArgs, BaseModelView
 from flask_admin.form.widgets import Select2Widget, DateTimePickerWidget, DatePickerWidget
 from flask_admin.model.fields import AjaxSelectMultipleField
@@ -13,6 +15,7 @@ from flask_sqlalchemy import Model
 from math import ceil
 from wtforms.widgets import TextArea, html_params
 from wtforms.fields import DateTimeField, DateField
+from wtforms.fields.core import UnboundField
 from markupsafe import escape, Markup
 
 from .filters import SQLAlchemyFilter
@@ -33,18 +36,24 @@ admin_consts.ICON_TYPE_LAYUI = 'layui'
 class FairyAdmin(Admin):
     def __init__(self, *args, **kwargs):
         super(FairyAdmin, self).__init__(*args, **kwargs)
-        self.index_view.menu_icon_type = admin_consts.ICON_TYPE_LAYUI
-        self.index_view.menu_icon_value = 'layui-icon-home'
 
     def init_app(self, app, *args, index_view=None, **kwargs):
         if index_view is None:
             index_view = self.index_view
+
+        if index_view.menu_icon_value is None:
+            index_view.menu_icon_type = admin_consts.ICON_TYPE_LAYUI
+            index_view.menu_icon_value = 'layui-icon-home'
 
         super(FairyAdmin, self).init_app(app, *args, index_view=index_view, **kwargs)
 
         template_folder = os.path.join('templates', self.template_mode)
         blueprint = Blueprint('fairy_admin', __name__, template_folder=template_folder, static_folder='static')
         app.register_blueprint(blueprint, url_prefix='/admin/fairy')
+
+        for view in self._views:
+            if hasattr(view, 'init_app'):
+                view.init_app(app)
 
 
 def _repr(value):
@@ -200,6 +209,64 @@ def _ajax_delete(self):
     return jsonify(dict(code=0, msg=''))
 
 
+def _ajax_upload(self, field):
+    form = self.get_form()
+    field_name = field
+    field = getattr(form, field_name)
+    if isinstance(field, UnboundField):
+        base_path = field.kwargs['base_path']
+        relative_path = field.kwargs['relative_path']
+        endpoint = field.kwargs['endpoint']
+    else:
+        base_path = field.base_path
+        relative_path = field.relative_path
+        endpoint = field.endpoint
+
+    if base_path is None or relative_path is None:
+        return jsonify(dict(code=500, msg='upload folder is not properly configured'))
+
+    if callable(base_path):
+        base_path = base_path()
+
+    file = request.files['file']
+    ext = os.path.splitext(file.filename)[1]
+    filename = '{}{}'.format(uuid.uuid4().hex[:8], ext)
+    relative_path = os.path.join(relative_path, 'upload')
+    abs_path = os.path.join(base_path, relative_path)
+    if not os.path.exists(abs_path):
+        os.makedirs(abs_path)
+    relative_file = os.path.join(relative_path, filename)
+    abs_file = os.path.join(abs_path, filename)
+    file.save(abs_file)
+    url = get_url(endpoint, filename=relative_file)
+    # url = url_for('.static', field=field_name, filename=relative_file, _external=True)
+    data = {
+        'filename': filename,
+        'title': field_name,
+        'src': url,
+        'path': relative_file
+    }
+    return jsonify(dict(code=0, msg='', data=data))
+
+
+def _static(self, field, filename):
+    form = self.get_form()
+    field = getattr(form, field)
+    if isinstance(field, UnboundField):
+        base_path = field.kwargs['base_path']
+        relative_path = field.kwargs['relative_path']
+    else:
+        base_path = field.base_path
+        relative_path = field.relative_path
+
+    if base_path is None or relative_path is None:
+        return jsonify(dict(code=500, msg='upload folder is not properly configured'))
+
+    if callable(base_path):
+        base_path = base_path()
+    return send_from_directory(base_path, filename)
+
+
 ModelView._old_apply_filters = ModelView._apply_filters
 ModelView._apply_filters = _apply_filters
 BaseModelView._old_get_list_filter_args = BaseModelView._get_list_filter_args
@@ -208,11 +275,14 @@ BaseModelView.ajax = _ajax
 BaseModelView.ajax_create_view = _ajax_new
 BaseModelView.ajax_edit_view = _ajax_edit
 BaseModelView.ajax_delete_view = _ajax_delete
+BaseModelView.ajax_upload = _ajax_upload
+BaseModelView.static = _static
 
 expose('/ajax/')(BaseModelView.ajax)
 expose('/ajax/new/', methods=['POST'])(BaseModelView.ajax_create_view)
 expose('/ajax/edit/', methods=['POST'])(BaseModelView.ajax_edit_view)
 expose('/ajax/delete/', methods=['POST'])(BaseModelView.ajax_delete_view)
+expose('/ajax/upload/<string:field>', methods=['POST'])(BaseModelView.ajax_upload)
 
 BaseModelView.can_export = True
 BaseModelView.page_size = 10
