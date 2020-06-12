@@ -164,10 +164,10 @@
                 });
             });
             $("button.btn-upload-file").each(function(i, e) {
-                var upload_url = $(e).data("upload-url");
                 upload.render({
                     elem: e,
-                    url: upload_url,
+                    url: $(e).data("upload-url"),
+                    accept: $(e).data("accept"),
                     done: function(res) {
                         if (res.code !== 0) {
                             layer.alert(res.msg);
@@ -183,10 +183,10 @@
                 });
             });
             $("button.btn-upload-image").each(function(i, e) {
-                var upload_url = $(e).data("upload-url");
                 upload.render({
                     elem: e,
-                    url: upload_url,
+                    url: $(e).data("upload-url"),
+                    accept: $(e).data("accept"),
                     done: function(res) {
                         if (res.code !== 0) {
                             layer.alert(res.msg);

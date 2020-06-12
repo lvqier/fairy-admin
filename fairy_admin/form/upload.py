@@ -4,9 +4,13 @@ import os
 from flask_admin.form import FileUploadField as _FileUploadField, ImageUploadField as _ImageUploadField
 from flask_admin.form import FileUploadInput as _FileUploadInput, ImageUploadInput as _ImageUploadInput
 from flask_admin.helpers import get_url
+from flask_admin.babel import gettext
 from flask_admin._backwards import Markup
+from wtforms import ValidationError
 from wtforms.widgets import html_params
 from werkzeug.datastructures import FileStorage
+
+from PIL import Image
 
 
 class FileUploadInput(_FileUploadInput):
@@ -17,8 +21,8 @@ class FileUploadInput(_FileUploadInput):
         ' <a class="file-preview"></a>'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
-        '  <span>上传文件</span>'
-        ' </button>'
+        + '  <span>{}</span>'.format(gettext('Select File'))
+        + ' </button>'
         ' <input class="upload-input" %(text)s />'
         ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
         '</div>'
@@ -29,8 +33,8 @@ class FileUploadInput(_FileUploadInput):
         ' <a class="file-preview" %(a)s>%(filename)s</a>'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
-        '  <span>上传文件</span>'
-        ' </button>'
+        + '  <span>{}</span>'.format(gettext('Select File'))
+        + ' </button>'
         ' <input class="upload-input" %(text)s />'
         ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
         '</div>'
@@ -41,6 +45,7 @@ class FileUploadInput(_FileUploadInput):
         kwargs.setdefault('name', field.name)
         kwargs.setdefault('class', 'layui-btn btn-upload-file')
         kwargs.setdefault('data-upload-url', get_url(field.upload_endpoint, field=field.name))
+        kwargs.setdefault('data-accept', 'file')
 
         template = self.data_template if field.data else self.empty_template
 
@@ -116,8 +121,8 @@ class ImageUploadInput(_ImageUploadInput):
         ' <img class="image-preview" />'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'    
-        '  <span>上传图片</span>'
-        ' </button>'
+        + '  <span>{}</span>'.format(gettext('Select Image'))
+        + ' </button>'
         ' <input class="upload-input" %(text)s />'
         ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" disabled />'
         '</div>'
@@ -128,8 +133,8 @@ class ImageUploadInput(_ImageUploadInput):
         ' <img class="image-preview" %(image)s />'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'    
-        '  <span>上传图片</span>'
-        ' </button>'
+        + '  <span>{}</span>'.format(gettext('Select Image'))
+        + ' </button>'
         ' <input class="upload-input" %(text)s />'
         ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
         '</div>'
@@ -138,6 +143,7 @@ class ImageUploadInput(_ImageUploadInput):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'layui-btn btn-upload-image')
         kwargs.setdefault('data-upload-url', get_url(field.upload_endpoint, field=field.name))
+        kwargs.setdefault('data-accept', 'images')
         return super(ImageUploadInput, self).__call__(field, **kwargs)
 
 
@@ -159,6 +165,15 @@ class ImageUploadField(_ImageUploadField):
         else:
             self.data = data
 
+    def pre_validate(self, form):
+        super(ImageUploadField, self).pre_validate(form)
+        if not self._should_delete and self.data:
+            path = self._get_path(self.data)
+            try:
+                self.image = Image.open(path)
+            except Exception as e:
+                raise ValidationError('Invalid image: %s' % e)
+
     def populate_obj(self, obj, name):
         field = getattr(obj, name, None)
         if field:
@@ -178,5 +193,17 @@ class ImageUploadField(_ImageUploadField):
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path), self.permission | 0o111)
 
-        os.rename(self._get_path(source_file), self._get_path(target_file))
+        filename, format = self._get_save_format(target_file, self.image)
+
+        if self.image and (self.image.format != format or self.max_size):
+            if self.max_size:
+                image = self._resize(self.image, self.max_size)
+            else:
+                image = self.image
+            self._save_image(image, path, format)
+        else:
+            os.rename(self._get_path(source_file), self._get_path(target_file))
+
+        self._save_thumbnail(source_file, target_file, format)
+        
         return target_file
