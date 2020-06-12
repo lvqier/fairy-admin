@@ -15,7 +15,7 @@ class FileUploadInput(_FileUploadInput):
     empty_template = (
         '<div class="upload-field">'
         ' <a class="file-preview"></a>'
-        ' <button type="button" %(file)s />'
+        ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
         '  <span>上传文件</span>'
         ' </button>'
@@ -27,7 +27,7 @@ class FileUploadInput(_FileUploadInput):
     data_template = (
         '<div class="upload-field">'
         ' <a class="file-preview" %(a)s>%(filename)s</a>'
-        ' <button type="button" %(file)s />'
+        ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
         '  <span>上传文件</span>'
         ' </button>'
