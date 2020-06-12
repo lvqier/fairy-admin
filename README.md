@@ -20,3 +20,11 @@ For example:
 > # use admin as usual
 
 ```
+
+
+## Migrate from Flask Admin
+
+|Flask Admin|Fairy Admin|
+|flask_admin.Admin|fairy_admin.FairyAdmin|
+|flask_admin.form.FileUploadField|fairy_admin.form.FileUploadField|
+|flask_admin.form.ImageUploadField|fairy_admin.form.ImageUploadField|
