@@ -142,6 +142,26 @@
             done: function() {
                 // 在 done 中开启
                 soulTable.render(this)
+                // 国际化
+                $(".layui-laypage-skip").contents().filter(function() {
+                    return this.nodeType == Node.TEXT_NODE;
+                }).each(function(idx, item) {
+                    if (item.nodeValue === "到第") {
+                        item.nodeValue = "{{ _gettext('Page') }}";
+                    } else if (item.nodeValue === "页") {
+                        item.nodeValue = "";
+                    }
+                });
+                $(".layui-laypage-btn").text("{{ _gettext('Go') }}");
+                $(".layui-laypage-btn").css("marginLeft", "0");
+                var total = $(".layui-laypage-count").text();
+                total = /共 (\d+) 条/.exec(total)[1];
+                $(".layui-laypage-count").text("{{ _gettext('Total') }} " + total);
+                $(".layui-laypage-limits select option").each(function(idx, item) {
+                    var text = $(item).text();
+                    var num = /(\d+) 条\/页/.exec(text)[1];
+                    $(item).text(num + " / {{ _gettext('Page') }}");
+                });
             }
         });
 
