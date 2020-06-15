@@ -189,7 +189,8 @@
                     before: function() {
                         show = layer.open({
                             type: 1,
-                            content: '<div style="margin: 10px 20px;"><div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="uploadfile"><div class="layui-progress-bar" lay-percent="" id="uploadfile"></div></div><p><span id="uploadfilemsg">正在上传</span></p></div>',
+                            title: "{{ _gettext('Upload') }}",
+                            content: '<div style="margin: 10px 20px; width: 220px; "><div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="uploadfile"><div class="layui-progress-bar" lay-percent="" id="uploadfile"></div></div><p><span id="uploadfilemsg">{{ _gettext('Uploading') }}</span></p></div>',
                             success: function() {
                             },
                             end: function () {
