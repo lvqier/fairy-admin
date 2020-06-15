@@ -66,7 +66,7 @@
 
     {{ lib.form_js() }}
     <script>
-    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'upload', 'laydate', 'laytpl'], function(){
+    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'upload', 'element', 'laydate', 'laytpl'], function(){
         //只要use就行，组件会自动渲染，如果是后期append到DOM结构中的元素需要再次渲染
         var dropdown = layui.dropdown
         , layer = layui.layer
@@ -75,6 +75,7 @@
         , $ = layui.$
         , form = layui.form
         , upload = layui.upload
+        , element = layui.element
         , laydate = layui.laydate
         , laytpl = layui.laytpl;
 
@@ -143,66 +144,6 @@
         {% endif %}
 
         {% if admin_view.create_modal or admin_view.edit_modal %}
-        function refreshForm() {
-            form.render();
-            $(".xm-select").each(function(i, e) {
-                var name = $(e).data("name");
-                var options = $(e).data("options");
-                xmSelect.render({
-                    el: e,
-                    name: name,
-                    data: options,
-                    template({ item, sels, name, value }){
-                        // Bugfix to xm-select, when name has patter <*>, it can not be displaed normally
-                        return $('<div/>').text(name).html();
-                    },
-                });
-            });
-            $("input.laydate").each(function(i, e) {
-                var type = $(e).data("type");
-                laydate.render({
-                    elem: e,
-                    type: type
-                });
-            });
-            $("button.btn-upload-file").each(function(i, e) {
-                upload.render({
-                    elem: e,
-                    url: $(e).data("upload-url"),
-                    accept: $(e).data("accept"),
-                    done: function(res) {
-                        if (res.code !== 0) {
-                            layer.alert(res.msg);
-                        }
-                        var data = res.data;
-                        $(e).parent().children("a.file-preview").text(data.filename);
-                        $(e).parent().children("a.file-preview").attr("href", data.src + "?attachment=1");
-                        $(e).parent().children("input.upload-input").val(data.path);
-                    },
-                    error: function(res) {
-                        layer.alert(res);
-                    }
-                });
-            });
-            $("button.btn-upload-image").each(function(i, e) {
-                upload.render({
-                    elem: e,
-                    url: $(e).data("upload-url"),
-                    accept: $(e).data("accept"),
-                    done: function(res) {
-                        if (res.code !== 0) {
-                            layer.alert(res.msg);
-                        }
-                        var data = res.data;
-                        $(e).parent().children("img.image-preview").attr("src", data.src);
-                        $(e).parent().children("input.upload-input").val(data.path);
-                    },
-                    error: function(res) {
-                        layer.alert(res);
-                    }
-                });
-            });
-        }
         function showEditModel(content, title, tableId=null) {
           layer.open({
             type: 1, 
