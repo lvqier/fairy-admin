@@ -60,8 +60,6 @@ class FairyAdmin(Admin):
             if formatter is None:
                 view.column_type_formatters[datetime] = self.datetime_formatter
 
-            print(view.column_type_formatters)
-
     def datetime_formatter(self, view, value):
         datetime_format = getattr(view, 'datetime_format', '%Y-%m-%d %H:%M:%S')
         return value.strftime(datetime_format)

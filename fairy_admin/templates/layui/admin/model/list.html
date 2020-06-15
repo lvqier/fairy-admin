@@ -30,18 +30,14 @@
       <form class="layui-form" lay-filter="form-filter" id="form-filter">
         {% if search_supported %}
         <div class="layui-form-item">
-          <label class="layui-form-label">{{ _gettext('Search') }}</label>
-          <div class="layui-input-block">
             {%- set max_size = config.get('FLASK_ADMIN_SEARCH_SIZE_MAX', 100) %}
             {%- set input_size = [[search_placeholder | length, 30] | max, max_size] | min %}
-            <input type="search" name="search" class="layui-input" size="{{ input_size }}" placeholder="{{ search_placeholder }}" />
-          </div>
-        </div>
-        <div class="layui-form-item" id="btn-form-filter" {% if not search_supported %}style="display: none; "{% endif %}>
-          <div class="layui-input-block">
-            <button type="submit" class="layui-btn" lay-submit lay-filter="form-filter">立即提交</button>
-            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
-          </div>
+            <div style="float: right; width: 110px; padding: 0 8px; box-sizing: border-box; ">
+              <button type="submit" class="layui-btn" style="vertical-align: top; " lay-submit lay-filter="form-filter">{{ _gettext('Apply') }}</button>
+            </div>
+            <div class="layui-input-block" style="margin-left: 0; margin-right: 110px;">
+              <input type="search" name="search" class="layui-input" size="{{ input_size }}" placeholder="{{ _gettext('Search: ') }}{{ search_placeholder }}" />
+            </div>
         </div>
         {% endif %}
       </form>
