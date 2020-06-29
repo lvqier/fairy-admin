@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="Fairy_Admin-0.0.18",
-    version="0.0.18",
+    name="Fairy_Admin-0.0.19",
+    version="0.0.19",
     author="Qier LU",
     author_email="lvqier@gmail.com",
     description="Fairy Admin add template based on Layui to Flask Admin",
