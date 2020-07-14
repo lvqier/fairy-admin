@@ -9,6 +9,7 @@ from flask_admin.helpers import get_redirect_target
 from flask_admin.model import BaseModelView as _BaseModelView
 from flask_admin.model.base import ViewArgs
 from flask_admin.babel import gettext
+from markupsafe import Markup
 from math import ceil
 
 from .fields import UnboundField
@@ -33,10 +34,15 @@ class BaseModelViewMixin(object):
         datetime_formatter = self.column_type_formatters.get(datetime)
         if datetime_formatter is None:
             self.column_type_formatters[datetime] = self._datetime_formatter
+        self.column_type_formatters[bool] = self._bool_formatter
 
-    def _datetime_formatter(self, row, value):
+    def _datetime_formatter(self, view, value):
         datetime_format = getattr(self, 'datetime_format', '%Y-%m-%d %H:%M:%S')
         return value.strftime(datetime_format)
+
+    def _bool_formatter(self, view, value):
+        icon = 'ok' if value else 'close'
+        return Markup('<i class="layui-icon layui-icon-{}"></i>'.format(icon))
 
     def _get_list_filter_args(self):
         if self.admin.template_mode == 'layui':
@@ -173,7 +179,7 @@ class BaseModelViewMixin(object):
             default_tool_bar.append('exports')
         default_tool_bar.append('print')
 
-        return {
+        result = {
             'url': self.get_url('.ajax'),
             'page': {
                 'limit': self.page_size,
@@ -192,6 +198,8 @@ class BaseModelViewMixin(object):
             'can_view_details': self.can_view_details,
             'can_delete': self.can_delete,
         }
+
+        return jsonify(result)
 
     @expose('/ajax/')
     def ajax(self):
