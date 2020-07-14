@@ -47,27 +47,6 @@
 
     <div class="layui-card-body">
     {% block model_list_table %}
-      <script type="text/html" id="table-menu-bar">
-        {% if admin_view.can_create %}
-          <button class="layui-btn layui-btn-sm" lay-event="create" title="{{ _gettext('Create New Record') }}">{{ _gettext('Create') }}</button>
-        {% endif %}
-        {% if actions %}
-          {% for p in actions %}
-          <button class="layui-btn layui-btn-sm" lay-event="{{ p[0] }}">{{ _gettext(p[1]) }}</button>
-          {% endfor %}
-        {% endif %}
-      </script>
-      {% block list_row_actions_column scoped %}
-      {% if admin_view.column_display_actions %}
-      <script type="text/html" id="table-row-toolbar">
-        {% block list_row_actions scoped %}
-          {% for action in list_row_actions %}
-          {{ action.render_ctx(-1, None) }}
-          {% endfor %}
-        {% endblock %}
-      </script>
-      {%- endif -%}
-      {% endblock %}
       <table id="table-model-list" lay-filter="table-model-list"></table>
     {% endblock %}
     </div>
@@ -79,218 +58,25 @@
 {% endblock %}
 
 {% block tail %}
-    {{ super() }}
-
     {{ lib.form_js() }}
+    {{ super() }}
     <script>
-    layui.use(['layer', 'table', 'soulTable', 'dropdown', 'jquery', 'form', 'upload', 'element', 'laydate', 'laytpl'], function(){
-        //只要use就行，组件会自动渲染，如果是后期append到DOM结构中的元素需要再次渲染
+    layui.use(['layer', 'dropdown', 'jquery', 'form', 'laytpl', 'table', 'modelList'], function(){
         var dropdown = layui.dropdown
         , layer = layui.layer
-        , table = layui.table
-        , soulTable = layui.soulTable
+        , modelList = layui.modelList
         , $ = layui.$
         , form = layui.form
-        , upload = layui.upload
-        , element = layui.element
-        , laydate = layui.laydate
-        , laytpl = layui.laytpl;
+        , laytpl = layui.laytpl
+        , table = layui.table
+        , soulTable = layui.soulTable;
 
-        table.render({
+        modelList.render({
             elem: "#table-model-list",
-            height: $(document).height() - $('#table-model-list').offset().top - 120,
-            url: "{{ get_url('.ajax') }}",
-            page: {
-                limit: {{ page_size}},
-                limits: [{{ page_size }}, 20, 50, 100],
-                prev: "{{ _gettext('Prev') }}",
-                next: "{{ _gettext('Next') }}",
-            },
-            toolbar: "#table-menu-bar",
-            defaultToolbar: [
-                "filter",
-                {% if admin_view.can_export %}"exports",{% endif %}
-                "print"
-            ],
-            cols: [[
-                {% if actions %}
-                {
-                    checkbox: true
-                },
-                {% endif %}
-                {% for c, name in list_columns %}
-                {%- set column = loop.index0 -%}
-                {
-                    field: "{{ c }}",
-                    sort: {{ 'true' if admin_view.is_sortable else 'false' }},
-                    title: "{{ name }}",
-                    filter: {{ 'true' if filter_groups and name in filter_groups else 'false' }},
-                    {% if admin_view.column_descriptions.get(c) %}
-                    // <a class="layui-icon layui-icon-about" title="{{ admin_view.column_descriptions[c] }}" href="javascript:void(0)" data-role="tooltip"></a>
-                    {% endif %}
-                },
-                {% endfor %}
-                {% if admin_view.column_display_actions %}
-                {
-                    width: 178,
-                    align: "center",
-                    fixed: "right",
-                    toolbar: "#table-row-toolbar"
-                }
-                {% endif %}
-            ]],
-            done: function() {
-                // 在 done 中开启
-                soulTable.render(this)
-                // 国际化
-                $(".layui-laypage-skip").contents().filter(function() {
-                    return this.nodeType == Node.TEXT_NODE;
-                }).each(function(idx, item) {
-                    if (item.nodeValue === "到第") {
-                        item.nodeValue = "{{ _gettext('Page') }}";
-                    } else if (item.nodeValue === "页") {
-                        item.nodeValue = "";
-                    }
-                });
-                $(".layui-laypage-btn").text("{{ _gettext('Go') }}");
-                $(".layui-laypage-btn").css("marginLeft", "0");
-                var total = $(".layui-laypage-count").text();
-                total = /共 (\d+) 条/.exec(total)[1];
-                $(".layui-laypage-count").text("{{ _gettext('Total') }} " + total);
-                $(".layui-laypage-limits select option").each(function(idx, item) {
-                    var text = $(item).text();
-                    var num = /(\d+) 条\/页/.exec(text)[1];
-                    $(item).text(num + " / {{ _gettext('Page') }}");
-                });
-            }
-        });
-
-        {% if admin_view.details_modal %}
-        function showViewModel(content, title, tableId=null) {
-            var index = layer.open({
-                type: 1, 
-                area: "640px",
-                title: title,
-                content: content,
-                btn: ["{{ _gettext('Done') }}"],
-                yes: function(index, layero) {
-                    layer.close(index);
-                }
-            }); 
-        }
-        {% endif %}
-
-        {% if admin_view.create_modal or admin_view.edit_modal %}
-        function showEditModel(content, title, tableId=null) {
-          layer.open({
-            type: 1, 
-            area: "640px",
-            title: title,
-            content: content,
-            btn: ["{{ _gettext('Save') }}", "{{ _gettext('Cancel') }}"],
-            yes: function(index, layero) {
-              var form = $(layero).find("form");
-              $(form).data("layer-index", index);
-              var btn = $(layero).find("[lay-submit]");
-              btn.click();
-            }
-          }); 
-          refreshForm();
-        }
-        {% endif %}
-
-        table.on('toolbar(table-model-list)', function(obj) {
-          if (obj.event === 'create') {
-            {% if admin_view.create_modal %}
-              $.ajax({
-                async: true,
-                method: 'GET',
-                url: "{{ get_url('.create_view', url=return_url, modal=True) | safe }}",
-                success: function(result) {
-                  showEditModel(result, "{{ _gettext('Create New Record') }}", obj.config.id);
-                },
-              });
-            {% else %}
-              window.location = "{{ get_url('.create_view', url=return_url) }}";
-            {% endif %}
-          } else if (obj.event === 'delete') {
-            var checkStatus = table.checkStatus(obj.config.id);
-            var ids = [];
-            checkStatus.data.forEach(function(item, idx) {
-              ids.push(item._id);
-            });
-            layer.confirm("{{ _gettext('Are you sure you want to delete these selected records?') }}", function(index){
-              $.ajax({
-                async: true,
-                method: 'POST',
-                url: "{{ get_url('.ajax_delete_view') }}",
-                contentType : "application/json",
-                data: JSON.stringify({
-                  ids: ids
-                }),
-                success: function(result) {
-                  if (result.code === 0) {
-                    table.reload(obj.config.id);
-                    layer.close(index);
-                  } else {
-                    layer.alert(result.msg);
-                  }
-                }
-              });
-            });
-          }
-        });
-
-        //监听工具条
-        table.on('tool(table-model-list)', function(obj){
-            var data = obj.data;
-            if(obj.event === 'view'){
-              {% if admin_view.details_modal %}
-              $.ajax({
-                  async: true,
-                  method: "GET",
-                  url: "{{ get_url('.details_view', url=return_url, modal=True) | safe }}&id=" + data._id,
-                  success: function(result) {
-                      showViewModel(result, "{{ _gettext('View Record') }} #" + data._id);
-                  }
-              });
-              {% else %}
-              window.location = "{{ get_url('.details_view', url=return_url) }}&id=" + data._id;
-              {% endif %}
-          } else if(obj.event === 'edit'){
-              {% if admin_view.edit_modal %}
-              $.ajax({
-                  async: true,
-                  method: "GET",
-                  url: "{{ get_url('.edit_view', url=return_url, modal=True) | safe }}&id=" + data._id,
-                  success: function(result) {
-                      showEditModel(result, "{{ _gettext('Edit Record') }} #" + data._id);
-                  },
-              });
-              {% else %}
-              window.location = "{{ get_url('.edit_view', url=return_url) }}&id=" + data._id;
-              {% endif %}
-          } else if(obj.event === 'delete'){
-              layer.confirm("{{ _gettext('Are you sure you want to delete this record?') }}", function(index){
-                  $.ajax({
-                      async: true,
-                      method: "POST",
-                      url: "{{ get_url('.ajax_delete_view') }}",
-                      contentType : "application/json",
-                      data: JSON.stringify({
-                          ids: [data._id]
-                      }),
-                      success: function(result) {
-                          if (result.code === 0) {
-                              obj.del();
-                              layer.close(index);
-                          } else {
-                              layer.alert(result.msg);
-                          }
-                      }
-                  });
-              });
-            }
+            configUrl: "{{ get_url('.ajax_config') }}",
+            toolbar: "#table-toolbar",
+            rowToolbar: "#table-row-toolbar",
+            height: $(document).height() - $("#table-model-list").offset().top - 120
         });
 
         var filterGroups = {{ filter_groups | tojson }};
@@ -349,39 +135,6 @@
             return false;
         });
 
-        form.on("submit(form-model)", function(data) {
-            if (!data.form) {
-                return false;
-            }
-            var index = $(data.form).data("layer-index");
-            const formData = new FormData(data.form);
-            $.ajax({
-              method: $(data.form).attr("method"),
-              url: $(data.form).attr("action"),
-              data: formData,
-              processData: false,
-              contentType: false,
-              success: function(result) {
-                if (result.code === 0) {
-                  table.reload("table-model-list");
-                  layer.close(index);
-                } else {
-                  if (result.errors) {
-                    for (var f in result.errors) {
-                      var field = result.errors[f];
-                      layer.alert(field.label + ": " + field.errors[0], {
-                        "title": result.msg
-                      });
-                      break;
-                    }
-                  } else {
-                    layer.alert(result.msg);
-                  }
-                }
-              }
-            });
-            return false;
-        });
     });
     </script>
 {% endblock %}

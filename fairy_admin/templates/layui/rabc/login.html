@@ -1,0 +1,132 @@
+{% extends 'rabc/base.html' %}
+
+{% block head %}
+{{ super() }}
+<style>
+body {
+    background-color: #f2f2f2;
+}
+.container {
+    padding: 100px 0;
+}
+.user-login-main {
+    width: 375px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    color: #666;
+}
+.user-login-main a {
+    color: #029789 !important;
+}
+.user-login-box {
+    padding: 20px;
+}
+.user-login-header {
+    text-align: center;
+}
+.user-login-header h2 {
+    margin-bottom: 10px;
+    font-weight: 300;
+    font-size: 30px;
+    color: black;
+}
+.user-login-header p {
+    font-weight: 300;
+    color: #999;
+}
+.user-login-body .layui-form-item {
+    position: relative;
+}
+.user-login-icon {
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 38px;
+    line-height: 36px;
+    text-align: center;
+    color: #d2d2d2;
+}
+.user-login-body .layui-form-item .layui-input {
+    padding-left: 38px;
+}
+.user-jump-change {
+    float: right;
+}
+</style>
+{% endblock %}
+
+{% block page_body %}
+<div class="container">
+  <div class="user-login-main">
+    <div class="user-login-box user-login-header">
+      <h2>{% if title %}{{ title }}{% else %}Fairy Admin{% endif %}</h2>
+      <p>基于Flask Admin和LayUI的后台框架</p>
+    </div>
+    <div class="user-login-box user-login-body layui-form">
+      <form method="POST" action="{{ url_for('.ajax_login') }}">
+        <div class="layui-form-item">
+          <label class="user-login-icon layui-icon layui-icon-username" for="user-login-username"></label>
+          <input type="text" name="username" id="user-login-username" lay-verify="required" placeholder="用户名" class="layui-input">
+        </div>
+        <div class="layui-form-item">
+          <label class="user-login-icon layui-icon layui-icon-password" for="user-login-password"></label>
+          <input type="password" name="password" id="user-login-password" lay-verify="required" placeholder="密码" class="layui-input">
+        </div>
+        <!--
+        <div class="layui-form-item">
+          <div class="layui-row">
+            <div class="layui-col-xs7">
+              <label class="user-login-icon layui-icon layui-icon-vercode" for="user-login-vercode"></label>
+              <input type="text" name="vercode" id="user-login-vercode" lay-verify="required" placeholder="图形验证码" class="layui-input">
+            </div>
+            <div class="layui-col-xs5">
+              <div style="margin-left: 10px;">
+                <img src="https://www.oschina.net/action/user/captcha" class="user-login-codeimg" id="user-get-vercode">
+              </div>
+            </div>
+          </div>
+        </div>
+        -->
+        <div class="layui-form-item" style="margin-bottom: 20px;">
+          <input type="checkbox" name="remember" lay-skin="primary" title="记住登入状态">
+          <!--
+          <a href="forget.html" class="user-jump-change" style="margin-top: 7px;">忘记密码？</a>
+          -->
+        </div>
+        <div class="layui-form-item">
+          <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="user-login-submit">登 入</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block tail %}
+<script>
+layui.use(["jquery", "form"], function() {
+    var $ = layui.$
+    , form = layui.form;
+    form.render();
+
+    form.on("submit(user-login-submit)", function(e) {
+        var {form, field} = e;
+        $.ajax({
+            method: $(form).attr("method"),
+            url: $(form).attr("action"),
+            data: field,
+            success: function(result) {
+                if (result.code !== 0) {
+                    layer.msg(result.msg);
+                }
+                window.location.href = result.data.url;
+            },
+            error: function(e) {
+                layer.msg("登入失败，请稍后再试");
+            }
+        });
+        return false;
+    });
+});
+</script>
+{% endblock %}

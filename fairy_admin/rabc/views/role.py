@@ -1,5 +1,5 @@
 
-from flask_admin.contrib.sqla import ModelView
+from fairy_admin.contrib.sqla import ModelView
 
 
 class RoleView(ModelView):
