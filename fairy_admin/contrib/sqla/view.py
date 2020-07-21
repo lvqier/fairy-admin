@@ -3,6 +3,7 @@ from flask import g
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView as _ModelView
 from flask_sqlalchemy import Model
+from sqlalchemy import func
 
 from fairy_admin.model import BaseModelViewMixin
 
@@ -25,14 +26,15 @@ class ModelView(BaseModelViewMixin, _ModelView):
 
     def _repr(self, value):
         return repr(value) if isinstance(value, Model) else value
-        
-    def apply_filters(self):
+
+    def _apply_filters(self, query, count_query, joins, count_joins, filters):
         '''
         适配LayUI表格扩展：soulTable的filter功能
         '''
         if self.admin.template_mode == 'layui':
             sqla_filter = SQLAlchemyFilter(self.model, query=query)
             query = sqla_filter.apply(filters)
+            count_query = query.with_entities(func.count('*'))
             return query, count_query, joins, count_joins
         return super(ModelView, self).apply_filters(query, count_query, joins, count_joins, filters)
 
@@ -72,8 +74,8 @@ class ModelRelationshipView(ModelView):
         '''
         return getattr(g.model, self.key)
 
-    def get_query_count(self):
-        return self.get_query().count()
+    def get_count_query(self):
+        return self.get_query().with_entities(func.count('*'))
 
     def on_model_change(self, form, model, is_create):
         '''

@@ -72,6 +72,22 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
     }
 
     function renderTable(_id, elem, toolbar, config, cols, height=null) {
+        function optionName(key) {
+            var value = key[this.field];
+            for (var idx in this.options) {
+                var option = this.options[idx];
+                if (option[0] === key[this.field][0]) {
+                    return option[1];
+                }
+            }
+            return value;
+        }
+        for (var idx in cols) {
+            var col = cols[idx];
+            if (col.options !== undefined) {
+                col.templet = optionName.bind(col);
+            }
+        }
         var tableOptions = {
             elem: elem,
             toolbar: toolbar,
@@ -79,7 +95,11 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
             url: config.url,
             page: config.page,
             cols: [cols],
+            soulSort: false,
             height: height,
+            filter: {
+                items: ["data", "condition", "editCondition"]
+            },
             done: function() {
                 soulTable.render(this);
                 // TODO check language, english only
@@ -99,7 +119,7 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                 });
                 $("[lay-id=\"" + _id + "\"] .layui-laypage-btn").text("Go");
                 $("[lay-id=\"" + _id + "\"] .layui-laypage-btn").css("marginLeft", "0");
-                $("[lay-id=\"" + _id + "\"] .layui-laypage-count").text(total + " Page(s) in Total");
+                $("[lay-id=\"" + _id + "\"] .layui-laypage-count").text(total + " in Total");
                 $("[lay-id=\"" + _id + "\"] .layui-laypage-limits select option").each(function(idx, item) {
                     var text = $(item).text();
                     var num = /(\d+) 条\/页/.exec(text)[1];
@@ -136,7 +156,7 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                         cols.push({
                             minWidth: result.column_actions_width || 178,
                             align: "center",
-                            fixed: "right",
+                            // fixed: "right",
                             toolbar: options.rowToolbar
                         });
                     }
@@ -148,6 +168,14 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                     } else {
                         renderTable(_id, elem, options.toolbar || false, result, cols, options.height || null);
                     }
+                    table.on("sort(" + _id + ")", function(obj) {
+                        table.reload(_id, {
+                            where: {
+                                field: obj.field,
+                                order: obj.type
+                            }
+                        });
+                    });
                     table.on("tool(" + _id + ")", function(obj) {
                         var {event, data} = obj;
                         var action;
@@ -162,6 +190,10 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                     });
                     table.on("toolbar(" + _id + ")", function(obj) {
                         var {event, config} = obj;
+                        if (event === 'reload') {
+                            table.reload(_id);
+                            return;
+                        }
                         var checkStatus = table.checkStatus(config.id);
                         var ids = [];
                         for (var index in checkStatus.data) {

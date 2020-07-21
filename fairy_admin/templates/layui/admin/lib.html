@@ -129,6 +129,9 @@
       {{# var btnCls = item.class ? " layui-btn-" + item.class: ""; }}
       <a class="layui-btn{{ btnCls}} layui-btn-sm" lay-event="{{ item.event }}">{{ item.name }}</a>
       {{# }); }}
+      {{# if(d.reload) { }}
+      <a class="layui-btn layui-btn-primary layui-btn-sm" lay-event="reload"><i class="layui-icon layui-icon-refresh-3"></i></a>
+      {{# } }}
     </div>
     {% endraw %}
   </script>

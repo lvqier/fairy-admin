@@ -1,5 +1,16 @@
 import datetime
 
+from flask_admin.babel import lazy_gettext
+from flask_admin.model.filters import BaseFilter
+
+
+class FilterInList(BaseFilter):
+    def __init__(self, column, options):
+        super(FilterInList, self).__init__(column.key, options, None)
+
+    def operation(self):
+        return lazy_gettext('in list')
+
 
 class SQLAlchemyFilter(object):
     def __init__(self, model, query=None):

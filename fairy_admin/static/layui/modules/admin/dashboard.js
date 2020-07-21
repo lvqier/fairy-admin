@@ -1,11 +1,12 @@
-layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "upload"], function(exports) {
+layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "upload", "table"], function(exports) {
     var layer = layui.layer
     , $ = layui.$
     , form = layui.form
     , layedit = layui.layedit
     , element = layui.element
     , laydate = layui.laydate
-    , upload = layui.upload;
+    , upload = layui.upload
+    , table = layui.table;
 
     var dashboard = {
         showAjaxModal: function(filter, url, title, isEdit, btn, callback=null) {
@@ -104,7 +105,8 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                     $(this).removeClass("layui-icon-spread-left");
                     $(this).addClass("layui-icon-shrink-right");
                     $("body").removeClass("layout-side-fold");
-               }
+                }
+                table.resize();
             });
             $(".btn-modal-action").on("click", function() {
                 var filter = "form";
@@ -116,8 +118,6 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                 dashboard.showAjaxModal(filter, url, title, isEdit, btn, function(id) {
                     eval(callback);
                 });
-                console.log(dashboard);
-                console.log(isEdit, title, url);
             });
         },
         refreshForm: function() {

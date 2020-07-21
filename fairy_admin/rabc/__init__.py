@@ -11,11 +11,13 @@ from .mixins import UserMixin, RoleMixin, PermissionMixin
 
 
 class RABC(SQLAlchemyUserDatastore):
-    def __init__(self, db, user_model=None, role_model=None, permission_model=None):
+    def __init__(self, db, user_model=None, role_model=None, permission_model=None, name=None, description=None):
         self.db = db
         self.User = user_model
         self.Role = role_model
         self.Permission = permission_model
+        self.name = name
+        self.description = description
         self.security = Security(register_blueprint=False)
 
         if self.Permission is None:
@@ -61,12 +63,16 @@ class RABC(SQLAlchemyUserDatastore):
         app.register_blueprint(blueprint, url_prefix=url)
 
     def login_view(self):
-        return render_template('rabc/login.html')
+        next_url = request.args.get('next', '')
+        ctx = {'rabc': self}
+        if next_url:
+            ctx.update(next_url=next_url)
+        return render_template('rabc/login.html', **ctx)
 
     def logout(self):
         logout_user()
-        return_url = get_redirect_target() or url_for(self.index_endpoint)
-        return redirect(return_url)
+        next_url = request.args.get('next')
+        return redirect(url_for('.login_view', next=next_url))
 
     def ajax_login(self):
         username = request.form['username']
@@ -74,11 +80,11 @@ class RABC(SQLAlchemyUserDatastore):
         remember = request.form.get('remember')
         user = self.find_user(username=username)
         if user is None or not verify_password(password, user.password):
-            return jsonify(dict(code=403, msg=gettext('Incorrect username or password!')))
+            return jsonify(dict(code=403, msg=gettext('用户名或者密码错误!')))
         if not user.active:
-            return jsonify(dict(code=403, msg=gettext('User is not activated!')))
+            return jsonify(dict(code=403, msg=gettext('用户未启用!')))
         login_user(user, bool(remember))
-        return_url = get_redirect_target() or url_for(self.index_endpoint)
+        return_url = get_redirect_target('next') or url_for(self.index_endpoint)
         return jsonify(dict(code=0, data={'url': return_url}))
 
     def create_user_view(self, session, model_view=None, **kwargs):

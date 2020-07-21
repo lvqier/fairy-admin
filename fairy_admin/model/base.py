@@ -8,6 +8,7 @@ from flask_admin import expose
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model import BaseModelView as _BaseModelView
 from flask_admin.model.base import ViewArgs
+from flask_admin.model.filters import BaseFilter
 from flask_admin.babel import gettext
 from markupsafe import Markup
 from math import ceil
@@ -28,6 +29,7 @@ class BaseModelViewMixin(object):
     column_action_details = True
     column_action_edit = True
     column_action_delete = True
+    column_list_reload = False
 
     def __init__(self, *args, **kwargs):
         super(BaseModelViewMixin, self).__init__(*args, **kwargs)
@@ -145,6 +147,22 @@ class BaseModelViewMixin(object):
 
         return bool(action_list), actions
 
+    def _refresh_filters_cache(self):
+        self._filters = self.get_filters()
+
+    def _get_filter_groups(self):
+        return None
+
+    def get_filters(self):
+        filters = {}
+        if self.column_filters:
+            for n in self.column_filters:
+                if isinstance(n, BaseFilter):
+                    filters[n.name] = n
+                else:
+                    filters[n] = True
+        return filters
+
     @expose('/ajax/config/')
     def ajax_config(self):
         '''
@@ -160,7 +178,6 @@ class BaseModelViewMixin(object):
 
         display_checkbox, actions = self.get_actions_list()
 
-        filter_groups = self._get_filter_groups()
         columns = []
         for c, name in self._list_columns:
             column = {
@@ -169,8 +186,11 @@ class BaseModelViewMixin(object):
                 'title': name,
                 'description': self.column_descriptions.get(c),
             }
-            if filter_groups and name in filter_groups:
+            if self._filters and c in self._filters:
                 column['filter'] = True
+                flt = self._filters[c]
+                if isinstance(flt, BaseFilter):
+                    column['options'] = flt.get_options(self)
 
             columns.append(column)
 
@@ -188,6 +208,7 @@ class BaseModelViewMixin(object):
                 'next': gettext('Next')
             },
             'actions': [action.convert() for action in actions],
+            'reload': self.column_list_reload,
             'cols': columns,
             'default_tool_bar': default_tool_bar,
             'column_display_numbers': self.column_display_numbers,
@@ -201,7 +222,7 @@ class BaseModelViewMixin(object):
 
         return jsonify(result)
 
-    @expose('/ajax/')
+    @expose('/ajax/', methods=['GET'])
     def ajax(self):
         '''
         LayUI 的数据表数据接口
@@ -219,12 +240,11 @@ class BaseModelViewMixin(object):
                 ]))
 
         sort_column = view_args.sort
-        if sort_column is not None:
-            sort_column = sort_column[0]
+        sort_desc = view_args.extra_args.get('order') == 'desc'
 
         page_size = view_args.page_size or self.page_size
 
-        count, data = self.get_list(view_args.page - 1, sort_column, view_args.sort_desc,
+        count, data = self.get_list(view_args.page - 1, sort_column, sort_desc,
                 view_args.search, view_args.filters, page_size=page_size)
 
         if count is not None and page_size:
@@ -233,8 +253,6 @@ class BaseModelViewMixin(object):
             num_pages = 0
         else:
             num_pages = None
-
-        referer = request.headers.get('Referer')
 
         list_columns = self._list_columns
         page = []
@@ -261,6 +279,23 @@ class BaseModelViewMixin(object):
             'page': view_args.page,
             'data': page,
         }
+
+        return jsonify(result)
+
+    @expose('/ajax/', methods=['POST'])
+    def ajax_post(self):
+        '''
+        表头数据接口
+        '''
+        columns = request.form['columns']
+        # tableFilterType = request.form.get('tableFilterType')
+        columns = json.loads(columns)
+        result = {}
+        for column in columns:
+            if column in self._filters:
+                flt = self._filters[column]
+                if isinstance(flt, BaseFilter):
+                    result[column] = [o[0] for o in flt.get_options(self)]
 
         return jsonify(result)
 

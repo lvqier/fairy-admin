@@ -27,7 +27,8 @@
     <script>
     layui.config({
         base: "{{ url_for('admin.static', filename='layui/modules/') }}"
-    }).extend({                         
+    }).extend({
+        echarts: 'echarts',
         soulTable: 'soulTable/soulTable',
         tableChild: 'soulTable/tableChild',
         tableMerge: 'soulTable/tableMerge',

@@ -6,6 +6,7 @@ from flask_admin import Admin, AdminIndexView as _AdminIndexView
 from flask_admin.menu import MenuLink
 from flask_admin.model.base import BaseModelView
 from flask_admin.contrib.sqla import ModelView
+from flask_login import current_user
 
 from .consts import ICON_TYPE_LAYUI
 
@@ -28,7 +29,7 @@ class AdminMixin(object):
 
     def _add_blueprints(self, view):
         if self.app is not None and hasattr(view, 'create_blueprints'):
-            print('add blueprints', view)
+            # print('add blueprints', view)
             for blueprint in  view.create_blueprints(self):
                 blueprint.url_value_preprocessor(self._url_value_preprocessor)
                 blueprint.url_defaults(self._url_defaults)
@@ -68,9 +69,14 @@ class TenantAdmin(AdminMixin, Admin):
         self.index_view.endpoint = endpoint
         index_view = index_view or self.index_view
         self._set_admin_index_view(index_view=index_view, endpoint=endpoint, url=url)
-        self._menu.insert(0, self.return_menu_link)
+
+        # 用户拥有 admin 角色才会显示返回按钮
+        if self.return_menu_link:
+            self._menu.insert(0, self.return_menu_link)
+
         self.app = app
         self.admin = admin
+        self.template_mode = admin.template_mode
         self.rabc = admin.rabc
         for view in self._views:
             blueprint = view.create_blueprint(self)
