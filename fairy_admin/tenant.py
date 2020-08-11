@@ -3,7 +3,7 @@ import warnings
 from datetime import datetime
 from flask import g, request
 from flask_admin import Admin, AdminIndexView as _AdminIndexView
-from flask_admin.menu import MenuLink
+from flask_admin.menu import MenuLink, MenuView
 from flask_admin.model.base import BaseModelView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
@@ -103,3 +103,10 @@ class TenantAdmin(AdminMixin, Admin):
             url = '%s%s' % (admin.url, url)
 
         return url
+
+    def _add_view_to_menu(self, view):
+        self.add_menu_item(MenuView(view.name, view, cache=False), view.category)
+
+    def _set_admin_index_view(self, index_view=None, endpoint=None, url=None):
+        super(TenantAdmin, self)._set_admin_index_view(index_view=index_view, endpoint=endpoint, url=url)
+        self._menu[0]._cache = False
