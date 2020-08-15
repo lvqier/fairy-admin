@@ -76,7 +76,7 @@
             configUrl: "{{ get_url('.ajax_config') }}",
             toolbar: "#table-toolbar",
             rowToolbar: "#table-row-toolbar",
-            height: $(document).height() - $("#table-model-list").offset().top - 120
+            height: "full - 120"
         });
 
         var filterGroups = {{ filter_groups | tojson }};
