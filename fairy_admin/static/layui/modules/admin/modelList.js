@@ -102,6 +102,13 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
             },
             done: function() {
                 soulTable.render(this);
+                // 修复由 soulTable 导致的表格高度问题
+                var filterHeight = $("[lay-id=\"" + _id + "\"]").find(".soul-bottom-contion").outerHeight();
+                if (filterHeight) {
+                    var targetHeight = $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").outerHeight() + filterHeight;
+                    $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").css("height", targetHeight);
+                }
+
                 // TODO check language, english only
                 var total = $("[lay-id=\"" + _id + "\"] .layui-laypage-count").text();
                 if (!total) {
