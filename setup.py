@@ -23,6 +23,7 @@ setuptools.setup(
     install_requires=[
         "flask_admin",
         "flask_security",
+        "email_validator",
         "Pillow"
     ]
 )
