@@ -11,6 +11,16 @@ from .filters import SQLAlchemyFilter
 from .form import AdminModelConverter
 
 
+class Call(object):
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, s):
+        self.func(*self.args, **self.kwargs)
+
+
 class ModelView(BaseModelViewMixin, _ModelView):
     create_modal = True
     edit_modal = True
@@ -44,14 +54,15 @@ class ModelView(BaseModelViewMixin, _ModelView):
             relationship_model_view = self.model_relationship_views[key]
             url = '{}/<int:model_id>/{}'.format(self.url, relationship_model_view.key)
             bp = relationship_model_view.create_blueprint(admin, url=url)
-            bp.url_value_preprocessor(self._url_value_preprocessor)
-            bp.url_defaults(self._url_defaults)
+
+            bp.record_once(Call(bp.url_value_preprocessor, self._url_value_preprocessor))
+            bp.record(Call(bp.url_defaults, self._url_defaults))
             blueprints.append(bp)
         return blueprints
 
     def _url_value_preprocessor(self, endpoint, view_args):
         g.model_id = view_args.pop('model_id')
-        g.model = self.get_query().get(g.model_id)
+        g.model = self.get_query().filter_by(id=g.model_id).first()
 
     def _url_defaults(self, endpoint, view_args):
         if 'model_id' not in view_args:

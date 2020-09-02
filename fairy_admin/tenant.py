@@ -29,8 +29,7 @@ class AdminMixin(object):
 
     def _add_blueprints(self, view):
         if self.app is not None and hasattr(view, 'create_blueprints'):
-            # print('add blueprints', view)
-            for blueprint in  view.create_blueprints(self):
+            for blueprint in view.create_blueprints(self):
                 blueprint.url_value_preprocessor(self._url_value_preprocessor)
                 blueprint.url_defaults(self._url_defaults)
                 self.app.register_blueprint(blueprint)
