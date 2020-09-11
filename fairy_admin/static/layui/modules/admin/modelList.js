@@ -13,11 +13,10 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
             async: true,
             method: "POST",
             url: url,
-            contentType: "application/json",
-            data: JSON.stringify({
-                action: action,
-                ids: ids
-            }),
+            // contentType: "application/json",
+            data: {
+                "_data": JSON.stringify({ids: ids})
+            },
             success: function(result) {
                 if (result.code === 0) {
                     if (index) {
@@ -60,7 +59,16 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                 var callback = function(tableId) {
                     table.reload(tableId);
                 };
-                dashboard.showAjaxModal(tableId, url, actionData.title, actionData.form, actionData.btn, callback);
+                var requestParams = {
+                    method: "POST",
+                    url: url,
+                    processData: false,
+                    data: JSON.stringify({
+                        "ids": ids
+                    }),
+                    contentType: "application/json"
+                };
+                dashboard.showAjaxModal(requestParams, tableId, actionData.title, actionData.form, actionData.btn, callback);
             } else {
                 var url = actionData.url;
                 if (ids.length > 0) {

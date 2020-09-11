@@ -3,11 +3,12 @@ from flask_admin.babel import gettext
 
 
 class BaseRowAction(object):
-    def __init__(self, event, icon=None, klass=None, name=None):
+    def __init__(self, event, icon=None, klass=None, name=None, endpoint='.action_ajax_view'):
         self.event = event
         self.icon = icon
         self.klass = klass
         self.name = name
+        self.endpoint = endpoint
 
     def convert(self):
         return {
@@ -17,37 +18,37 @@ class BaseRowAction(object):
             'name': self.name
         }
 
+    @property
+    def url(self):
+        return url_for(self.endpoint, action_name=self.event)
+
 
 class AjaxRowAction(BaseRowAction):
-    def __init__(self, event, endpoint, confirmation=None, **kwargs):
+    def __init__(self, event, confirmation=None, **kwargs):
         super(AjaxRowAction, self).__init__(event, **kwargs)
-        self.endpoint = endpoint
         self.confirmation = confirmation
 
     def convert(self):
         result = super(AjaxRowAction, self).convert()
-        url = url_for(self.endpoint)
         result.update({
             'ajax': True,
             'data': {
                 'confirmation': self.confirmation,
-                'url': url
+                'url': self.url
             }
         })
         return result
 
 
 class ModalRowAction(BaseRowAction):
-    def __init__(self, event, endpoint, modal_title, form=True, btn=True, **kwargs):
+    def __init__(self, event, modal_title, form=True, btn=True, **kwargs):
         super(ModalRowAction, self).__init__(event, **kwargs)
-        self.endpoint = endpoint
         self.modal_title = modal_title
         self.form = form
         self.btn = btn
 
     def convert(self):
         result = super(ModalRowAction, self).convert()
-        url = url_for(self.endpoint, modal=True)
         btn = self.btn
         if self.btn is True:
             if self.form:
@@ -59,7 +60,7 @@ class ModalRowAction(BaseRowAction):
             'ajax': False,
             'data': {
                 'modal': True,
-                'url': url,
+                'url': self.url,
                 'title': self.modal_title,
                 'form': self.form,
                 'btn': btn
@@ -67,20 +68,22 @@ class ModalRowAction(BaseRowAction):
         })
         return result
 
+    @property
+    def url(self):
+        return url_for(self.endpoint, action_name=self.event, modal=True)
+
 
 class LinkRowAction(BaseRowAction):
-    def __init__(self, event, endpoint, **kwargs):
+    def __init__(self, event, **kwargs):
         super(LinkRowAction, self).__init__(event, **kwargs)
-        self.endpoint = endpoint
 
     def convert(self):
         result = super(LinkRowAction, self).convert()
-        url = url_for(self.endpoint)
         result.update({
             'ajax': False,
             'data': {
                 'modal': False,
-                'url': url
+                'url': self.url
             }
         })
         return result

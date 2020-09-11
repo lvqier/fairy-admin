@@ -6,12 +6,10 @@
 
 {% block body %}
   <div class="layui-fluid" style="padding: 20px">
-  {# "save and add" button is removed from modal (it won't function properly) #}
-  {% block create_form %}
-    {{ lib.render_form(form, return_url, extra=None, form_opts=form_opts,
-                       action=url_for('.ajax_create_view'),
-                       is_modal=True) }}
-  {% endblock %}
+    {% block action_form %}
+      {{ lib.render_form(form, return_url, extra=None, form_opts=form_opts,
+                         action=action_url, is_modal=True) }}
+    {% endblock %}
   </div>
 {% endblock %}
 

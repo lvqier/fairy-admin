@@ -13,23 +13,43 @@ from flask_admin.babel import gettext
 from markupsafe import Markup
 from math import ceil
 
+from fairy_admin.actions import ActionsMixin
+
 from .fields import UnboundField
 from .template import AjaxRowAction, ModalRowAction, LinkRowAction
 
 
-class BaseModelViewMixin(object):
+class BaseModelViewMixin(ActionsMixin):
     can_export = True
     page_size = 10
     form_label_width = None
-    '''
+    """
     form_label_width allows user to control width of label on the left side of form input
-    '''
+    """
     column_display_numbers = False
+    """
+    enable column_display_numbers to show row number on table of model list
+    """
     column_actions_width = 178
+    """
+    control display width of actions column on table of model list
+    """
     column_action_details = True
+    """
+    control display of details button on actions column on table of model list
+    """
     column_action_edit = True
+    """
+    control display of edit button on actions column on table of model list
+    """
     column_action_delete = True
+    """
+    control display of delete button on actions column on table of model list
+    """
     column_list_reload = False
+    """
+    control display of reload button on table of model list
+    """
 
     def __init__(self, *args, **kwargs):
         super(BaseModelViewMixin, self).__init__(*args, **kwargs)
@@ -56,96 +76,28 @@ class BaseModelViewMixin(object):
         return value
 
     def model_can_view_details(self, row):
-        '''
+        """
         按行检查是否支持查看详情，用于控制行内“详情”按钮
-        '''
+        """
         return self.can_view_details
 
     def model_can_edit(self, row):
-        '''
+        """
         按行检查是否支持编辑，用于控制行内“编辑”按钮
-        '''
+        """
         return self.can_edit
 
     def model_can_delete(self, row):
-        '''
+        """
         按行检查是否支持编辑，用于控制行内“删除”按钮
-        '''
+        """
         return self.can_delete
 
     def model_check_extra_action(self, row, action):
-        '''
+        """
         按行检查是否支持额外动作，用于控制行内相应动作按钮
-        '''
+        """
         return True
-
-    def _get_list_row_actions(self, item):
-        '''
-        关于 action:
-        a. 异步: 异步请求: ajax=True
-          1. 区分是否弹框提示: confirmation
-        b. 同步: 打开页面: ajax=False
-          1. 弹框: modal=object
-            i. 区分是否可编辑: form
-          2. 跳转
-        '''
-        pk = self.get_pk_value(item)
-
-        actions = []
-        if self.model_can_view_details(item) and self.column_action_details:
-            name = gettext('Details')
-            if self.details_modal:
-                modal_title = '{} #{}'.format(gettext('View Record'), pk)
-                action = ModalRowAction('details', '.details_view', modal_title, form=False, name=name)
-            else:
-                action = LinkRowAction('details', '.details_view', name=name)
-            actions.append(action)
-
-        if self.model_can_edit(item) and self.column_action_edit:
-            name = gettext('Edit')
-            if self.edit_modal:
-                modal_title = '{} #{}'.format(gettext('Edit Record'), pk)
-                action = ModalRowAction('edit', '.edit_view', modal_title, form=True, name=name)
-            else:
-                url = self.get_url('.edit_view', id=pk)
-                action = LinkRowAction('edit', '.edit_view', name=name)
-            actions.append(action)
-
-        if self.model_can_delete(item) and self.column_action_delete:
-            name = gettext('Delete')
-            confirmation = gettext('Are you sure you want to delete this record?')
-            action = AjaxRowAction('delete', '.ajax_action_view', confirmation=confirmation, klass='danger', name=name)
-            actions.append(action)
-
-        if self.column_extra_row_actions:
-            for extra_action in self.column_extra_row_actions:
-                if self.model_check_extra_action(item, extra_action):
-                    actions.append(extra_action)
-
-        return actions
-
-    def get_actions_list(self):
-        actions = []
-        if self.can_create:
-            name = gettext('Create')
-            if self.create_modal:
-                modal_title = gettext('Create New Record')
-                action = ModalRowAction('create', '.create_view', modal_title, form=True, name=name)
-            else:
-                action = LinkRowAction('create', '.create_view', name=name)
-            actions.append(action)
-
-        action_list, actions_confirmation = super(BaseModelViewMixin, self).get_actions_list()
-
-        for action_name, title in action_list:
-            confirmation=actions_confirmation.get(action_name)
-            klass = None
-            if action_name == 'delete':
-                klass = 'danger'
-            action = AjaxRowAction(action_name, '.ajax_action_view', confirmation=confirmation, klass=klass, name=title)
-            actions.append(action)
-
-        return bool(action_list), actions
 
     def _refresh_filters_cache(self):
         self._filters = self.get_filters()
@@ -165,9 +117,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/config/')
     def ajax_config(self):
-        '''
+        """
         LayUI 的数据表配置接口
-        '''
+        """
         limits = [self.page_size]
         if self.can_set_page_size:
             limits = [20, 50, 100]
@@ -224,9 +176,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/', methods=['GET'])
     def ajax(self):
-        '''
+        """
         LayUI 的数据表数据接口
-        '''
+        """
         view_args = ViewArgs(page=request.args.get('page', 1, type=int),
                 page_size=request.args.get('limit', 0, type=int),
                 sort=request.args.get('field', None, type=str),
@@ -284,9 +236,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/', methods=['POST'])
     def ajax_post(self):
-        '''
+        """
         表头数据接口
-        '''
+        """
         columns = request.form['columns']
         # tableFilterType = request.form.get('tableFilterType')
         columns = json.loads(columns)
@@ -299,33 +251,11 @@ class BaseModelViewMixin(object):
 
         return jsonify(result)
 
-    @expose('/ajax/action/', methods=['POST'])
-    def ajax_action_view(self):
-        '''
-        动作执行接口，同时服务批量操作与按行操作
-        '''
-        data = request.json
-        action = data['action']
-        ids = data['ids']
-
-        handler = self._actions_data.get(action)
-        if handler and self.is_action_allowed(action):
-            try:
-                response = handler[0](ids)
-            except Exception as e:
-                result = dict(code=500, msg='Failed to perform action. {}'.format(e.message))
-            else:
-                result = dict(code=0, msg='Success')
-        else:
-            result = dict(code=403, msg='Action is not allowed.')
-        get_flashed_messages()
-        return jsonify(result)
-
     @expose('/ajax/new/', methods=['POST'])
     def ajax_create_view(self):
-        '''
+        """
         异步创建接口
-        '''
+        """
         if not self.can_create:
             return jsonify(dict(code=403, msg='Can not create'))
 
@@ -351,9 +281,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/edit/', methods=['POST'])
     def ajax_edit_view(self):
-        '''
+        """
         异步保存编辑接口
-        '''
+        """
         if not self.can_edit:
             return jsonify(dict(code=403, msg='Can not edit'))
 
@@ -389,9 +319,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/delete/', methods=['POST'])
     def ajax_delete_view(self):
-        '''
+        """
         异步删除接口
-        '''
+        """
         if not self.can_delete:
             return jsonify(dict(code=403, msg='Can not edit'))
 
@@ -408,9 +338,9 @@ class BaseModelViewMixin(object):
 
     @expose('/ajax/upload/<string:field_name>', methods=['POST'])
     def ajax_upload(self, field_name):
-        '''
+        """
         异步上传接口，服务文件上传字段
-        '''
+        """
         form = self.get_form()
         field = getattr(form, field_name)
         if isinstance(field, UnboundField):
@@ -446,12 +376,6 @@ class BaseModelViewMixin(object):
             'path': relative_file
         }
         return jsonify(dict(code=0, msg='', data=data))
-
-    def is_editable(self, item):
-        return True
-
-    def is_deletable(self, item):
-        return True
 
 
 class BaseModelView(BaseModelViewMixin, _BaseModelView):

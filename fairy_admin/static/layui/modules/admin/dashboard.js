@@ -9,12 +9,9 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
     , table = layui.table;
 
     var dashboard = {
-        showAjaxModal: function(filter, url, title, isEdit, btn, callback=null) {
-            var btn;
-            $.ajax({
+        showAjaxModal: function(requestParams, filter, title, isEdit, btn, callback=null) {
+            var params = Object.assign(requestParams, {
                 async: true,
-                method: "GET",
-                url: url,
                 success: function(result) {
                     var index = layer.open({
                         type: 1,
@@ -31,11 +28,19 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                             var form = $(layero).find("form");
                             if (form) {
                                 $(form).data("layer-index", index);
+                                if (requestParams.data) {
+                                    var input = $("<input type=\"hidden\" name=\"_data\" />");
+                                    input.val(requestParams.data);
+                                    $(form).append(input);
+                                }
                                 var btn = $(layero).find("[lay-submit]");
                                 if (btn.size() === 0) {
                                     $(form).append("<button type=\"submit\" style=\"display: none;\" lay-submit lay-filter=\"" + filter + "-modal-form\">submit</button>");
                                     btn = $(layero).find("[lay-submit]");
                                 }
+                            }
+                            if (isEdit) {
+                                dashboard.refreshForm();
                             }
                         },
                         yes: function(index, layero) {
@@ -47,11 +52,10 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                             }
                         }
                     });
-                    if (isEdit) {
-                        dashboard.refreshForm();
-                    }
                 }
             });
+            $.ajax(params);
+
             form.on("submit(" + filter + "-modal-form)", function(data) {
                 if (!data.form) {
                     return false;
@@ -115,7 +119,10 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                 var isEdit = $(this).data("form");
                 var btn = $(this).data("btn");
                 var callback = $(this).data("callback");
-                dashboard.showAjaxModal(filter, url, title, isEdit, btn, function(id) {
+                dashboard.showAjaxModal({
+                    "method": "GET",
+                    "url": url
+                }, filter, title, isEdit, btn, function(id) {
                     eval(callback);
                 });
             });
