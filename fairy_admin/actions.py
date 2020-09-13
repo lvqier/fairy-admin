@@ -1,13 +1,17 @@
 import json
 
-from flask import request, url_for, jsonify
+from collections import namedtuple
+from flask import request, url_for, jsonify, abort, get_flashed_messages
 from flask_admin import tools, expose
+from flask_admin._compat import text_type
 from flask_admin.helpers import get_redirect_target
 from flask_admin.actions import ActionsMixin as _ActionsMixin
 from flask_admin.babel import gettext
 
-from .model.template import AjaxRowAction, ModalRowAction, LinkRowAction
+from .model.template import AjaxAction, AjaxModalAction, LinkAction
 
+
+Action = namedtuple('Action', ['func', 'text', 'form', 'confirmation'])
 
 def action(name, text, form=None, confirmation=None):
     """
@@ -43,9 +47,9 @@ class ActionsMixin(_ActionsMixin):
 
     def init_actions(self):
         """
-            Initialize list of actions for the current administrative view.
-            Overwrite flask_admin.actions.ActionsMixin.init_actions
-            TODO: treat create, delete, edit, view_details as action
+        Initialize list of actions for the current administrative view.
+        Overwrite flask_admin.actions.ActionsMixin.init_actions
+        TODO: treat create, delete, edit, view_details as action
         """
         self._actions = []
         self._actions_data = {}
@@ -60,13 +64,14 @@ class ActionsMixin(_ActionsMixin):
                     form = None
                 else:
                     name, text, form, desc = attr._action
+                func = getattr(self, p)
                 self._actions.append((name, text))
-                self._actions_data[name] = (getattr(self, p), text, form, desc)
+                self._actions_data[name] = Action(func, text, form, desc)
 
     def get_actions_list(self):
         """
-            Return a list and a dictironary of allowed actions.
-            Overwrite flask_admin.actions.ActionsMixin.get_actions_list
+        Return a list and a dictironary of allowed actions.
+        Overwrite flask_admin.actions.ActionsMixin.get_actions_list
         """
         all_actions = []
         actions = {}
@@ -75,7 +80,7 @@ class ActionsMixin(_ActionsMixin):
             title = gettext('Create')
             if self.create_modal:
                 modal_title = gettext('Create New Record')
-                action = ModalRowAction(
+                action = AjaxModalAction(
                     action_name,
                     modal_title,
                     form=True,
@@ -83,20 +88,34 @@ class ActionsMixin(_ActionsMixin):
                     endpoint='.create_view'
                 )
             else:
-                action = LinkRowAction(action_name, name=title, endpoint='.create_view')
+                action = LinkAction(
+                    action_name,
+                    name=title,
+                    endpoint='.create_view'
+                )
             actions[action_name] = action
             all_actions.append(action_name)
 
-        action_list, actions_confirmation = super(ActionsMixin, self).get_actions_list()
+        action_list = []
+        actions_confirmation = {}
+        for act in self._actions:
+            name, text = act
+
+            if self.is_action_allowed(name):
+                action_list.append((name, text_type(text)))
+
+                confirmation = self._actions_data[name].confirmation
+                if confirmation:
+                    actions_confirmation[name] = text_type(confirmation)
 
         for action_name, title in action_list:
             confirmation = actions_confirmation.get(action_name)
             klass = None
             if action_name == 'delete':
                 klass = 'danger'
-            form = self._actions_data[action_name][2]
+            form = self._actions_data[action_name].form
             if form is not None:
-                action = ModalRowAction(
+                action = AjaxModalAction(
                     action_name,
                     title,
                     form=True,
@@ -104,7 +123,7 @@ class ActionsMixin(_ActionsMixin):
                     endpoint='.action_view'
                 )
             else:
-                action = AjaxRowAction(
+                action = AjaxAction(
                     action_name,
                     confirmation=confirmation,
                     klass=klass,
@@ -142,7 +161,7 @@ class ActionsMixin(_ActionsMixin):
             title = gettext('Details')
             if self.details_modal:
                 modal_title = '{} #{}'.format(gettext('View Record'), pk)
-                action = ModalRowAction(
+                action = AjaxModalAction(
                     action_name,
                     modal_title,
                     form=False,
@@ -150,7 +169,11 @@ class ActionsMixin(_ActionsMixin):
                     endpoint='.details_view'
                 )
             else:
-                action = LinkRowAction(action_name, name=title, endpoint='.details_view')
+                action = LinkAction(
+                    action_name,
+                    name=title,
+                    endpoint='.details_view'
+                )
             all_actions.append(action_name)
             actions[action_name] = action
 
@@ -159,7 +182,7 @@ class ActionsMixin(_ActionsMixin):
             title = gettext('Edit')
             if self.edit_modal:
                 modal_title = '{} #{}'.format(gettext('Edit Record'), pk)
-                action = ModalRowAction(
+                action = AjaxModalAction(
                     action_name,
                     modal_title,
                     form=True,
@@ -167,7 +190,11 @@ class ActionsMixin(_ActionsMixin):
                     endpoint='.edit_view'
                 )
             else:
-                action = LinkRowAction(action_name, name=title, endpoint='.edit_view')
+                action = LinkAction(
+                    action_name,
+                    name=title,
+                    endpoint='.edit_view'
+                )
             all_actions.append(action_name)
             actions[action_name] = action
 
@@ -175,7 +202,12 @@ class ActionsMixin(_ActionsMixin):
             title = gettext('Delete')
             action_name = 'delete'
             confirmation = gettext('Are you sure you want to delete this record?')
-            action = AjaxRowAction(action_name, confirmation=confirmation, klass='danger', name=title)
+            action = AjaxAction(
+                action_name,
+                confirmation=confirmation,
+                klass='danger',
+                name=title
+            )
             all_actions.append(action_name)
             actions[action_name] = action
 
@@ -222,6 +254,9 @@ class ActionsMixin(_ActionsMixin):
 
     @expose('/action/<string:action_name>/ajax/', methods=['POST'])
     def action_ajax_view(self, action_name):
+        """
+        异步执行 Action
+        """
         if action_name not in self._actions_data:
             abort(404)
         elif not self.is_action_allowed(action_name):
@@ -245,8 +280,11 @@ class ActionsMixin(_ActionsMixin):
             else:
                 response = func(ids, form=form)
         except Exception as e:
-            result = dict(code=500, msg='Failed to perform action. {}'.format(e.message))
+            result = dict(
+                code=500,
+                msg='Failed to perform action. {}'.format(e.message)
+            )
         else:
             result = dict(code=0, msg='Success')
-        # get_flashed_messages()
+        get_flashed_messages()
         return jsonify(result) 

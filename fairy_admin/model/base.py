@@ -3,8 +3,8 @@ import os
 import uuid
 
 from datetime import datetime
-from flask import request, jsonify, get_flashed_messages, abort
-from flask_admin import expose
+from flask import request, jsonify, get_flashed_messages, abort, send_from_directory
+from flask_admin import tools, expose
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model import BaseModelView as _BaseModelView
 from flask_admin.model.base import ViewArgs
@@ -12,11 +12,11 @@ from flask_admin.model.filters import BaseFilter
 from flask_admin.babel import gettext
 from markupsafe import Markup
 from math import ceil
+from wtforms import form
 
 from fairy_admin.actions import ActionsMixin
 
 from .fields import UnboundField
-from .template import AjaxRowAction, ModalRowAction, LinkRowAction
 
 
 class BaseModelViewMixin(ActionsMixin):
@@ -24,7 +24,7 @@ class BaseModelViewMixin(ActionsMixin):
     page_size = 10
     form_label_width = None
     """
-    form_label_width allows user to control width of label on the left side of form input
+    form_label_width controls width of label on the left side of form input
     """
     column_display_numbers = False
     """
@@ -179,25 +179,37 @@ class BaseModelViewMixin(ActionsMixin):
         """
         LayUI 的数据表数据接口
         """
-        view_args = ViewArgs(page=request.args.get('page', 1, type=int),
-                page_size=request.args.get('limit', 0, type=int),
-                sort=request.args.get('field', None, type=str),
-                sort_desc=request.args.get('desc', None, type=int),
-                search=request.args.get('search', None),
-                filters=self._get_list_filter_args(),
-                extra_args=dict([
-                    (k, v) for k, v in request.args.items()
-                    if k not in ('page', 'limit', 'field', 'desc', 'search', 'filterSos') and
-                    not k.startswith('flt')
-                ]))
+        extra_args = {}
+        for k, v in request.args.items():
+            if k in ('page', 'limit', 'field', 'desc', 'search', 'filterSos'):
+                continue
+            if k.startswith('flt'):
+                continue
+            extra_args[k] = v
+
+        view_args = ViewArgs(
+            page=request.args.get('page', 1, type=int),
+            page_size=request.args.get('limit', 0, type=int),
+            sort=request.args.get('field', None, type=str),
+            sort_desc=request.args.get('desc', None, type=int),
+            search=request.args.get('search', None),
+            filters=self._get_list_filter_args(),
+            extra_args=extra_args
+        )
 
         sort_column = view_args.sort
         sort_desc = view_args.extra_args.get('order') == 'desc'
 
         page_size = view_args.page_size or self.page_size
 
-        count, data = self.get_list(view_args.page - 1, sort_column, sort_desc,
-                view_args.search, view_args.filters, page_size=page_size)
+        count, data = self.get_list(
+            view_args.page - 1,
+            sort_column,
+            sort_desc,
+            view_args.search,
+            view_args.filters,
+            page_size=page_size
+        )
 
         if count is not None and page_size:
             num_pages = int(ceil(count / float(page_size)))
@@ -336,24 +348,57 @@ class BaseModelViewMixin(ActionsMixin):
 
         return jsonify(dict(code=0, msg=''))
 
+    def get_form(self, form_name=None):
+        """
+        Get form class.
+
+        If ``self.rom`` is set, will return it and will call
+        ``self.scaffold_form`` otherwise.
+
+        Override to implement customized behavior.
+        """
+        if form_name is None:
+            return super(BaseModelViewMixin, self).get_form()
+
+        # TODO use cache for forms
+        for p in dir(self):
+            attr = tools.get_dict_attr(self, p)
+            if isinstance(attr, form.Form) or issubclass(attr, form.Form):
+                print(form_name, attr)
+                if hasattr(attr, '__formname__'):
+                    if attr.__formname__ == form_name:
+                        return attr
+        return None
+
     @expose('/ajax/upload/<string:field_name>', methods=['POST'])
     def ajax_upload(self, field_name):
         """
         异步上传接口，服务文件上传字段
         """
-        form = self.get_form()
-        field = getattr(form, field_name)
+        items = field_name.split('.')
+        if len(items) == 1:
+            _field_name = items[0]
+            form = self.get_form()
+        else:
+            _field_name = items[1]
+            form = self.get_form(items[0])
+
+        field = getattr(form, _field_name)
         if isinstance(field, UnboundField):
             base_path = field.kwargs['base_path']
             relative_path = field.kwargs['relative_path']
-            endpoint = field.kwargs['endpoint']
+            endpoint = field.kwargs.get('endpoint', '.download')
         else:
             base_path = field.base_path
             relative_path = field.relative_path
             endpoint = field.endpoint
 
         if base_path is None or relative_path is None:
-            return jsonify(dict(code=500, msg='upload folder is not properly configured'))
+            result = dict(
+                code=500,
+                msg='upload folder is not properly configured'
+            )
+            return jsonify(result)
 
         if callable(base_path):
             base_path = base_path()
@@ -361,21 +406,46 @@ class BaseModelViewMixin(ActionsMixin):
         file = request.files['file']
         ext = os.path.splitext(file.filename)[1]
         filename = '{}{}'.format(uuid.uuid4().hex[:8], ext)
-        relative_path = os.path.join(relative_path, 'upload')
+        # relative_path = os.path.join(relative_path, 'upload')
         abs_path = os.path.join(base_path, relative_path)
         if not os.path.exists(abs_path):
             os.makedirs(abs_path)
         relative_file = os.path.join(relative_path, filename)
         abs_file = os.path.join(abs_path, filename)
         file.save(abs_file)
-        url = self.get_url(endpoint, filename=relative_file)
+        url = self.get_url(endpoint, field_name=field_name, filename=relative_file)
         data = {
             'filename': file.filename,
-            'title': field_name,
+            'title': _field_name,
             'src': url,
             'path': relative_file
         }
         return jsonify(dict(code=0, msg='', data=data))
+
+    @expose('/download/<string:field_name>/<path:filename>')
+    def download(self, field_name, filename):
+        items = field_name.split('.')
+        if len(items) == 1:
+            field_name = items[0]
+            form = self.get_form()
+        else:
+            field_name = items[1]
+            form = self.get_form(items[0])
+
+        field = getattr(form, field_name)
+        if isinstance(field, UnboundField):
+            base_path = field.kwargs['base_path']
+        else:
+            base_path = field.base_path
+
+        if base_path is None:
+            abort(500)
+
+        if callable(base_path):
+            base_path = base_path()
+
+        as_attachment = bool(request.args.get('attachment'))
+        return send_from_directory(base_path, filename, as_attachment=as_attachment)
 
 
 class BaseModelView(BaseModelViewMixin, _BaseModelView):

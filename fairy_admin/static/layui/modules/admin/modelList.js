@@ -60,14 +60,22 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                     table.reload(tableId);
                 };
                 var requestParams = {
-                    method: "POST",
                     url: url,
-                    processData: false,
-                    data: JSON.stringify({
-                        "ids": ids
-                    }),
-                    contentType: "application/json"
                 };
+                if (event === 'edit' || event === 'view_details' || event === 'create') {
+                    requestParams = Object.assign(requestParams, {
+                        method: "GET",
+                    });
+                } else {
+                    requestParams = Object.assign(requestParams, {
+                        method: "POST",
+                        processData: false,
+                        data: JSON.stringify({
+                            "ids": ids
+                        }),
+                        contentType: "application/json"
+                    });
+                }
                 dashboard.showAjaxModal(requestParams, tableId, actionData.title, actionData.form, actionData.btn, callback);
             } else {
                 var url = actionData.url;
@@ -113,8 +121,12 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                 // 修复由 soulTable 导致的表格高度问题
                 var filterHeight = $("[lay-id=\"" + _id + "\"]").find(".soul-bottom-contion").outerHeight();
                 if (filterHeight) {
-                    var targetHeight = $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").outerHeight() + filterHeight;
-                    $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").css("height", targetHeight);
+                    var targetHeight = $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").data("height");
+                    if (targetHeight === undefined) {
+                        targetHeight = $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").outerHeight() + filterHeight;
+                        $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").css("height", targetHeight);
+                        $("[lay-id=\"" + _id + "\"]").find(".layui-table-body").data("height", targetHeight);
+                    }
                 }
 
                 // TODO check language, english only

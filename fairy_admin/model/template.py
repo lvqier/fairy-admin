@@ -2,7 +2,7 @@ from flask import url_for
 from flask_admin.babel import gettext
 
 
-class BaseRowAction(object):
+class BaseAction(object):
     def __init__(self, event, icon=None, klass=None, name=None, endpoint='.action_ajax_view'):
         self.event = event
         self.icon = icon
@@ -23,13 +23,13 @@ class BaseRowAction(object):
         return url_for(self.endpoint, action_name=self.event)
 
 
-class AjaxRowAction(BaseRowAction):
+class AjaxAction(BaseAction):
     def __init__(self, event, confirmation=None, **kwargs):
-        super(AjaxRowAction, self).__init__(event, **kwargs)
+        super(AjaxAction, self).__init__(event, **kwargs)
         self.confirmation = confirmation
 
     def convert(self):
-        result = super(AjaxRowAction, self).convert()
+        result = super(AjaxAction, self).convert()
         result.update({
             'ajax': True,
             'data': {
@@ -39,16 +39,18 @@ class AjaxRowAction(BaseRowAction):
         })
         return result
 
+AjaxRowAction = AjaxAction
 
-class ModalRowAction(BaseRowAction):
+
+class AjaxModalAction(BaseAction):
     def __init__(self, event, modal_title, form=True, btn=True, **kwargs):
-        super(ModalRowAction, self).__init__(event, **kwargs)
+        super(AjaxModalAction, self).__init__(event, **kwargs)
         self.modal_title = modal_title
         self.form = form
         self.btn = btn
 
     def convert(self):
-        result = super(ModalRowAction, self).convert()
+        result = super(AjaxModalAction, self).convert()
         btn = self.btn
         if self.btn is True:
             if self.form:
@@ -73,7 +75,10 @@ class ModalRowAction(BaseRowAction):
         return url_for(self.endpoint, action_name=self.event, modal=True)
 
 
-class LinkRowAction(BaseRowAction):
+ModalRowAction = AjaxModalAction
+
+
+class LinkAction(BaseAction):
     def __init__(self, event, **kwargs):
         super(LinkRowAction, self).__init__(event, **kwargs)
 
@@ -87,3 +92,6 @@ class LinkRowAction(BaseRowAction):
             }
         })
         return result
+
+
+LinkRowAction = LinkAction

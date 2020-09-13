@@ -1,9 +1,8 @@
 
 import os
 
-from flask_admin.form import FileUploadField as _FileUploadField, ImageUploadField as _ImageUploadField
-from flask_admin.form import FileUploadInput as _FileUploadInput, ImageUploadInput as _ImageUploadInput
-from flask_admin.helpers import get_url
+from flask_admin import form
+from flask_admin.helpers import get_url, is_required_form_field
 from flask_admin.babel import gettext
 from markupsafe import Markup
 from wtforms import ValidationError
@@ -14,41 +13,44 @@ from werkzeug.datastructures import FileStorage
 from PIL import Image
 
 
-class FileUploadInput(_FileUploadInput):
+class FileUploadInput(form.FileUploadInput):
     tag = 'upload'
 
     empty_template = (
-        '<div class="upload-field">'
         ' <a class="file-preview"></a>'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
         + '  <span>{}</span>'.format(gettext('Select File'))
         + ' </button>'
         ' <input class="upload-input" %(text)s />'
-        ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
-        '</div>'
     )
 
     data_template = (
-        '<div class="upload-field">'
         ' <a class="file-preview" %(a)s>%(filename)s</a>'
         ' <button type="button" %(file)s>'
         '  <i class="layui-icon">&#xe67c;</i>'
         + '  <span>{}</span>'.format(gettext('Select File'))
         + ' </button>'
         ' <input class="upload-input" %(text)s />'
-        ' <input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
-        '</div>'
     )
 
-    def __call__(self, field, **kwargs):
+    def __call__(self, field, form=None, **kwargs):
         kwargs.setdefault('id', field.id)
         kwargs.setdefault('name', field.name)
         kwargs.setdefault('class', 'layui-btn btn-upload-file')
-        kwargs.setdefault('data-upload-url', get_url(field.upload_endpoint, field_name=field.name))
+
+        field_name = field.name
+        if hasattr(form, '__formname__'):
+            field_name = '{}.{}'.format(form.__formname__, field_name)
+        upload_url = get_url(field.upload_endpoint, field_name=field_name)
+        kwargs.setdefault('data-upload-url', upload_url)
         kwargs.setdefault('data-accept', 'file')
 
-        template = self.data_template if field.data else self.empty_template
+        _template = self.data_template if field.data else self.empty_template
+        if not is_required_form_field(field):
+            _template += '<input type="checkbox" class="upload-delete" name="%(marker)s" title="Delete" />'
+
+        template = '<div class="upload-field">{}</div>'.format(_template)
 
         if field.errors:
             template = self.empty_template
@@ -107,10 +109,10 @@ class UploadFieldMixin(object):
             self._changed = False
 
 
-class FileUploadField(UploadFieldMixin, _FileUploadField):
+class FileUploadField(UploadFieldMixin, form.FileUploadField):
     widget = FileUploadInput()
 
-    def __init__(self, *args, endpoint='.static', upload_endpoint='.ajax_upload', **kwargs):
+    def __init__(self, *args, endpoint='.download', upload_endpoint='.ajax_upload', **kwargs):
         super(FileUploadField, self).__init__(*args, **kwargs)
         self.endpoint = endpoint
         self.upload_endpoint = upload_endpoint
@@ -124,7 +126,7 @@ class FileUploadField(UploadFieldMixin, _FileUploadField):
         return target_file
 
 
-class ImageUploadInput(_ImageUploadInput):
+class ImageUploadInput(form.ImageUploadInput):
     tag = 'upload-image'
 
     empty_template = (
@@ -151,17 +153,22 @@ class ImageUploadInput(_ImageUploadInput):
         '</div>'
     )
 
-    def __call__(self, field, **kwargs):
+    def __call__(self, field, form=None, **kwargs):
         kwargs.setdefault('class', 'layui-btn btn-upload-image')
-        kwargs.setdefault('data-upload-url', get_url(field.upload_endpoint, field_name=field.name))
+
+        field_name = field.name
+        if hasattr(form.__formname__):
+            field_name = '{}.{}'.format(form.__formname__, field_name)
+        upload_url = get_url(field.upload_endpoint, field_name=field_name)
+        kwargs.setdefault('data-upload-url', upload_url)
         kwargs.setdefault('data-accept', 'images')
         return super(ImageUploadInput, self).__call__(field, **kwargs)
 
 
-class ImageUploadField(UploadFieldMixin, _ImageUploadField):
+class ImageUploadField(UploadFieldMixin, form.ImageUploadField):
     widget = ImageUploadInput()
 
-    def __init__(self, *args, endpoint='.static', upload_endpoint='.ajax_upload', **kwargs):
+    def __init__(self, *args, endpoint='.download', upload_endpoint='.ajax_upload', **kwargs):
         super(ImageUploadField, self).__init__(*args, endpoint=endpoint, **kwargs)
         self.upload_endpoint = upload_endpoint
 
