@@ -39,7 +39,10 @@ class AjaxAction(BaseAction):
         })
         return result
 
-AjaxRowAction = AjaxAction
+class AjaxRowAction(AjaxAction):
+    def __init__(self, event, endpoint, **kwargs):
+        super(AjaxRowAction, self).__init__(event, endpoint=endpoint, **kwargs)
+        print('AjaxRowAction is deprecated, please use AjaxAction instead')
 
 
 class AjaxModalAction(BaseAction):
@@ -75,15 +78,18 @@ class AjaxModalAction(BaseAction):
         return url_for(self.endpoint, action_name=self.event, modal=True)
 
 
-ModalRowAction = AjaxModalAction
+class ModalRowAction(AjaxModalAction):
+    def __init__(self, event, endpoint, *args, **kwargs):
+        super(ModalRowAction, self).__init__(event, *args, endpoint=endpoint, **kwargs)
+        print('ModalRowAction is deprecated, please use ModalRowAction instead')
 
 
 class LinkAction(BaseAction):
     def __init__(self, event, **kwargs):
-        super(LinkRowAction, self).__init__(event, **kwargs)
+        super(LinkAction, self).__init__(event, **kwargs)
 
     def convert(self):
-        result = super(LinkRowAction, self).convert()
+        result = super(LinkAction, self).convert()
         result.update({
             'ajax': False,
             'data': {
@@ -94,4 +100,7 @@ class LinkAction(BaseAction):
         return result
 
 
-LinkRowAction = LinkAction
+class LinkRowAction(LinkAction):
+    def __init__(self, event, endpoint, **kwargs):
+        super(LinkRowAction, self).__init__(event, endpoint=endpoint, **kwargs)
+        print('LinkRowAction is deprecated, please use LinkAction instead')

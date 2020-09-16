@@ -215,7 +215,7 @@ class ActionsMixin(_ActionsMixin):
             for extra_action in self.column_extra_row_actions:
                 if self.model_check_extra_action(item, extra_action):
                     all_actions.append(extra_action.event)
-                    actions.append(extra_action)
+                    actions[extra_action.event] = extra_action
 
         result_actions = []
         action_list = self.row_actions or all_actions
