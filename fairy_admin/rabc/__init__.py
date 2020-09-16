@@ -42,7 +42,7 @@ class RABC(SQLAlchemyUserDatastore):
                     return self.nickname
             self.User = User
         if not hasattr(self.User, 'roles'):
-            user_role_table = db.Table('user_role',
+            user_role_table = db.Table('admin_user_role',
                 db.Column('user_id', db.Integer, db.ForeignKey('admin_user.id')),
                 db.Column('role_id', db.Integer, db.ForeignKey('admin_role.id'))
             )

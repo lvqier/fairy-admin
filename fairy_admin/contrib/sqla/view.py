@@ -38,9 +38,9 @@ class ModelView(BaseModelViewMixin, _ModelView):
         return repr(value) if isinstance(value, Model) else value
 
     def _apply_filters(self, query, count_query, joins, count_joins, filters):
-        '''
+        """
         适配LayUI表格扩展：soulTable的filter功能
-        '''
+        """
         if self.admin.template_mode == 'layui':
             sqla_filter = SQLAlchemyFilter(self.model, query=query)
             query = sqla_filter.apply(filters)
@@ -80,18 +80,19 @@ class ModelRelationshipView(ModelView):
         self._refresh_cache()
 
     def get_query(self):
-        '''
+        """
         默认取模型的relationship字段，可重载
-        '''
+        """
         return getattr(g.model, self.key)
 
     def get_count_query(self):
         return self.get_query().with_entities(func.count('*'))
 
     def on_model_change(self, form, model, is_create):
-        '''
-        创建时默认添加到relationship集合。一般如果重载了get_query()，本方法也需要被重载
-        '''
+        """
+        创建时默认添加到relationship集合。
+        一般如果重载了get_query()，本方法也需要被重载
+        """
         if is_create:
             self.get_query().append(model)
 

@@ -31,11 +31,14 @@ class RoleMixin(_RoleMixin):
     update_at = Column(DateTime, onupdate=datetime.now)
 
     def __eq__(self, other):
-        '''
+        """
         使用 code 来判断是否相同
-        '''
-        return (self.code == other or
-                self.code == getattr(other, 'code', None))
+        """
+        if isinstance(other, str):
+            return self.code == other
+        if isinstance(other, RoleMixin):
+            return self.code == other.code
+        return False
 
     def __hash__(self):
         return hash(self.code)

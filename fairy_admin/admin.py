@@ -10,21 +10,33 @@ from .tenant import AdminMixin, AdminIndexView
 class FairyAdmin(AdminMixin, Admin):
     def __init__(self, *args, rabc=None, index_view=None, url=None, endpoint=None, **kwargs):
         index_view = index_view or AdminIndexView(endpoint=endpoint, url=url)
-        super(FairyAdmin, self).__init__(*args, index_view=index_view, url=url, endpoint=endpoint, **kwargs)
+        kwargs.update({
+            'index_view': index_view,
+            'url': url,
+            'endpoint': endpoint
+        })
+        super(FairyAdmin, self).__init__(*args, **kwargs)
         self._tenant_admins = []
         self.rabc = rabc
 
     def init_app(self, app, *args, index_view=None, rabc=None, **kwargs):
-        super(FairyAdmin, self).init_app(app, *args, index_view=index_view, **kwargs)
-        self.rabc = rabc
+        kwargs.update({
+            'index_view': index_view
+        })
+        super(FairyAdmin, self).init_app(app, *args, **kwargs)
 
+        self.rabc = rabc
         if 'fairy_admin' not in app.blueprints:
             template_folder = os.path.join('templates', self.template_mode)
-            blueprint = Blueprint('fairy_admin', __name__, template_folder=template_folder, static_folder='static')
+            blueprint = Blueprint(
+                'fairy_admin',
+                __name__,
+                template_folder=template_folder,
+                static_folder='static'
+            )
             app.register_blueprint(blueprint, url_prefix='/admin/fairy')
 
         for tenant_admin, _kwargs in self._tenant_admins:
-            # print(tenant_admin, _kwargs)
             tenant_admin.init_app(app, self, **_kwargs)
 
         for view in self._views:
@@ -35,4 +47,3 @@ class FairyAdmin(AdminMixin, Admin):
 
         if self.app is not None:
             tenant_admin.init_app(self.app, self, **kwargs)
-
