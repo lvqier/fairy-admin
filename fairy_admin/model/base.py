@@ -115,6 +115,16 @@ class BaseModelViewMixin(ActionsMixin):
                     filters[n] = True
         return filters
 
+    def render(self, template, **kwargs):
+        """
+        Overwride flask_admin.base.BaseView.render
+
+        Changes: 
+        * add get_label function for column name to work with get_value
+        """
+        kwargs['get_label'] = self.get_column_name
+        return super(BaseModelViewMixin, self).render(template, **kwargs)
+
     @expose('/ajax/config/')
     def ajax_config(self):
         """
