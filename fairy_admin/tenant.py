@@ -13,7 +13,12 @@ from .consts import ICON_TYPE_LAYUI
 
 class AdminIndexView(_AdminIndexView):
     def __init__(self, *args, menu_icon_type=ICON_TYPE_LAYUI, menu_icon_value='layui-icon-home', **kwargs):
-        super(AdminIndexView, self).__init__(*args, menu_icon_type=menu_icon_type, menu_icon_value=menu_icon_value, **kwargs)
+        super(AdminIndexView, self).__init__(
+            *args,
+            menu_icon_type=menu_icon_type,
+            menu_icon_value=menu_icon_value,
+            **kwargs
+        )
 
 
 class AdminMixin(object):
@@ -48,16 +53,33 @@ class TenantAdmin(AdminMixin, Admin):
         '''
         index_view = index_view or AdminIndexView(url=url, endpoint=endpoint)
         kwargs['app'] = None
-        super(TenantAdmin, self).__init__(index_view=index_view, url=url, endpoint=endpoint, **kwargs)
+        super(TenantAdmin, self).__init__(
+            index_view=index_view,
+            url=url,
+            endpoint=endpoint,
+            **kwargs
+        )
         self.rabc = None
-        self._add_return_link(return_name, endpoint=return_endpoint, url=return_url, icon_type=return_icon_type, icon_value=return_icon_value)
+        self._add_return_link(
+            return_name,
+            endpoint=return_endpoint,
+            url=return_url,
+            icon_type=return_icon_type,
+            icon_value=return_icon_value
+        )
 
     def _add_return_link(self, name, endpoint=None, url=None, icon_type=None, icon_value=None):
         icon_type = icon_type or ICON_TYPE_LAYUI
         icon_value = icon_value or 'layui-icon-return'
         menu_link = None
         if endpoint or url:
-            menu_link = MenuLink(name, endpoint=endpoint, url=url, icon_type=icon_type, icon_value=icon_value)
+            menu_link = MenuLink(
+                name,
+                endpoint=endpoint,
+                url=url,
+                icon_type=icon_type,
+                icon_value=icon_value
+            )
         self.return_menu_link = menu_link
 
     def init_app(self, app, admin, index_view=None, endpoint=None, url=None):
@@ -67,7 +89,10 @@ class TenantAdmin(AdminMixin, Admin):
         endpoint = endpoint or self.endpoint
         self.index_view.endpoint = endpoint
         index_view = index_view or self.index_view
-        self._set_admin_index_view(index_view=index_view, endpoint=endpoint, url=url)
+        self._set_admin_index_view(
+            index_view=index_view,
+            endpoint=endpoint, url=url
+        )
 
         # 用户拥有 admin 角色才会显示返回按钮
         if self.return_menu_link:
@@ -104,8 +129,12 @@ class TenantAdmin(AdminMixin, Admin):
         return url
 
     def _add_view_to_menu(self, view):
-        self.add_menu_item(MenuView(view.name, view, cache=False), view.category)
+        menu_view = MenuView(view.name, view, cache=False)
+        self.add_menu_item(menu_view, view.category)
 
     def _set_admin_index_view(self, index_view=None, endpoint=None, url=None):
-        super(TenantAdmin, self)._set_admin_index_view(index_view=index_view, endpoint=endpoint, url=url)
+        super(TenantAdmin, self)._set_admin_index_view(
+            index_view=index_view,
+            endpoint=endpoint, url=url
+        )
         self._menu[0]._cache = False

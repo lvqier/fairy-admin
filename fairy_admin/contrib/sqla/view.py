@@ -4,6 +4,7 @@ from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView as _ModelView
 from flask_sqlalchemy import Model
 from sqlalchemy import func
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from fairy_admin.model import BaseModelViewMixin
 
@@ -31,8 +32,16 @@ class ModelView(BaseModelViewMixin, _ModelView):
     def __init__(self, ModelClass, session, *args, **kwargs):
         super(ModelView, self).__init__(ModelClass, session, *args, **kwargs)
         for key in self.model_relationship_views:
+            field = getattr(self.model, key)
+            if not isinstance(field, InstrumentedAttribute):
+                field_name = '{}.{}'.format(ModelClass.__name__, key)
+                print('Warning: lazy of relationship field {}.{} should be set to \'dynamic\''.format(field_name))
             relationship_model_view = self.model_relationship_views[key]
-            relationship_model_view.setup_relationship(self.endpoint, key, session)
+            relationship_model_view.setup_relationship(
+                self.endpoint,
+                key,
+                session
+            )
 
     def _repr(self, value):
         return repr(value) if isinstance(value, Model) else value
@@ -46,16 +55,30 @@ class ModelView(BaseModelViewMixin, _ModelView):
             query = sqla_filter.apply(filters)
             count_query = query.with_entities(func.count('*'))
             return query, count_query, joins, count_joins
-        return super(ModelView, self).apply_filters(query, count_query, joins, count_joins, filters)
+        return super(ModelView, self).apply_filters(
+            query,
+            count_query,
+            joins,
+            count_joins,
+            filters
+        )
 
     def create_blueprints(self, admin):
         blueprints = []
         for key in self.model_relationship_views:
             relationship_model_view = self.model_relationship_views[key]
-            url = '{}/<int:model_id>/{}'.format(self.url, relationship_model_view.key)
+            url = '{}/<int:model_id>/{}'.format(
+                self.url,
+                relationship_model_view.key
+            )
             bp = relationship_model_view.create_blueprint(admin, url=url)
 
-            bp.record_once(Call(bp.url_value_preprocessor, self._url_value_preprocessor))
+            bp.record_once(
+                Call(
+                    bp.url_value_preprocessor,
+                    self._url_value_preprocessor
+                )
+            )
             bp.record(Call(bp.url_defaults, self._url_defaults))
             blueprints.append(bp)
         return blueprints
