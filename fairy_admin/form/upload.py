@@ -157,7 +157,7 @@ class ImageUploadInput(form.ImageUploadInput):
         kwargs.setdefault('class', 'layui-btn btn-upload-image')
 
         field_name = field.name
-        if hasattr(form.__formname__):
+        if hasattr(form, '__formname__'):
             field_name = '{}.{}'.format(form.__formname__, field_name)
         upload_url = get_url(field.upload_endpoint, field_name=field_name)
         kwargs.setdefault('data-upload-url', upload_url)

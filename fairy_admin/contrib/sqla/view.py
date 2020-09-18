@@ -37,7 +37,7 @@ class ModelView(BaseModelViewMixin, _ModelView):
             field = getattr(self.model, key)
             if not isinstance(field, InstrumentedAttribute):
                 field_name = '{}.{}'.format(ModelClass.__name__, key)
-                print('Warning: lazy of relationship field {}.{} should be set to \'dynamic\''.format(field_name))
+                print('Warning: lazy of relationship field {} should be set to \'dynamic\''.format(field_name))
             relationship_model_view = self.model_relationship_views[key]
             relationship_model_view.setup_relationship(
                 self.endpoint,
