@@ -8,10 +8,7 @@
 </div>
 {% endblock %}
 
-{% block body %}
-  {% block navlinks %}
-  {% endblock %}
-
+{% macro model_details(model) %}
   {% block details_search %}
     <!--
     <div class="layui-form-item">
@@ -37,8 +34,54 @@
     {% endfor %}
     </table>
   {% endblock %}
+{% endmacro %}
+
+{% block body %}
+  {% block navlinks %}
+  {% endblock %}
+
+  {% if not relationship_views %}
+    {{ model_details(model) }}
+  {% else %}
+  <div class="layui-tab layui-tab-brief">
+      <ul class="layui-tab-title">
+          <li class="layui-this">{{ _gettext('Details') }}</li>
+          {% for relationship_view in relationship_views %}
+          <li>{{ relationship_view.name }}</li>
+          {% endfor %}
+      </ul>
+      <div class="layui-tab-content">
+          <div class="layui-tab-item layui-show">
+            {{ model_details(model) }}
+          </div>
+          {% for relationship_view in relationship_views %}
+          <div class="layui-tab-item">
+              <table class="relationship-table" data-config-url="{{ relationship_view.config_url}}" id="table-{{ relationship_view.field }}" lay-filter="table-{{ relationship_view.field }}"></table>
+          </div>
+          {% endfor %}
+      </div>
+  </div>
+  {% endif %}
 {% endblock %}
 
 {% block tail %}
+  {{ lib.form_js() }}
   {{ super() }}
+  <script>
+      layui.use(['jquery', 'modelList'], function () {
+          var $ = layui.$,
+              modelList = layui.modelList;
+
+          $("table.relationship-table").each(function (idx, item) {
+              var configUrl = $(item).data("config-url");
+              var elem = $(item).attr("id");
+              modelList.render({
+                  elem: "#" + elem,
+                  configUrl: configUrl,
+                  toolbar: "#table-toolbar",
+                  rowToolbar: "#table-row-toolbar"
+              });
+          });
+      });
+  </script>
 {% endblock %}

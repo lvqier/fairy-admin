@@ -1,7 +1,9 @@
 
-from flask import g
+from flask import g, request, url_for
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView as _ModelView
+from flask_admin.model.helpers import get_mdict_item_or_list
+from flask_admin.helpers import get_redirect_target
 from flask_sqlalchemy import Model
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -90,6 +92,53 @@ class ModelView(BaseModelViewMixin, _ModelView):
     def _url_defaults(self, endpoint, view_args):
         if 'model_id' not in view_args:
             view_args['model_id'] = g.model_id
+
+    @expose('/details/')
+    def details_view(self):
+        """
+        Overwrite flask_admin.contrib.sqla.ModelView.details_view
+        Add relationship data to template args
+        """
+        return_url = get_redirect_target() or self.get_url('.index_view')
+
+        if not self.can_view_details:
+            return redirect(return_url)
+
+        id = get_mdict_item_or_list(request.args, 'id')
+        if id is None:
+            return redirect(return_url)
+
+        model = self.get_one(id)
+
+        if model is None:
+            flash(gettext('Record does not exist.'), 'error')
+
+        if self.details_modal and request.args.get('modal'):
+            template = self.details_modal_template
+        else:
+            template = self.details_template
+
+        relationship_views = []
+        for relationship in self.model_relationship_views:
+            relationship_view = self.model_relationship_views[relationship]
+            bp = relationship_view.blueprint
+            endpoint = '{}.ajax_config'.format(relationship_view.blueprint.name)
+            data = {
+                'field': relationship,
+                'name': self._prettify_name(relationship_view.model.__name__),
+                'config_url': self.get_url(endpoint, model_id=id)
+            }
+            relationship_views.append(data)
+
+        return self.render(
+            template,
+            model=model,
+            details_columns=self._details_columns,
+            get_value=self.get_detail_value,
+            relationship_views=relationship_views,
+            return_url=return_url
+        )
+        return super(ModelView, self).details_view()
 
 
 class ModelRelationshipView(ModelView):
