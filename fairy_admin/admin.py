@@ -42,6 +42,8 @@ class FairyAdmin(AdminMixin, Admin):
         for view in self._views:
             self._add_blueprints(view)
 
+        self.rabc.init_admin(self)
+
     def add_tenant_admin(self, tenant_admin, **kwargs):
         self._tenant_admins.append((tenant_admin, kwargs))
 

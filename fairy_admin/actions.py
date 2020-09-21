@@ -9,11 +9,12 @@ from flask_admin.actions import ActionsMixin as _ActionsMixin
 from flask_admin.babel import gettext
 
 from .model.template import AjaxAction, AjaxModalAction, LinkAction
+from .model.template import POSITION_HEAD, POSITION_ROW
 
 
 Action = namedtuple('Action', ['func', 'text', 'form', 'confirmation'])
 
-def action(name, text, form=None, confirmation=None):
+def action(name, text, form=None, confirmation=None, position=POSITION_HEAD):
     """
     Use this decorator to expose actions that span more than one
     entity (model, file, etc)
@@ -30,7 +31,7 @@ def action(name, text, form=None, confirmation=None):
         unconditionally.
     """
     def wrap(f):
-        f._action = (name, text, form, confirmation)
+        f._action = (name, text, position, form, confirmation)
         return f
     return wrap
 
@@ -49,41 +50,23 @@ class ActionsMixin(_ActionsMixin):
         """
         Initialize list of actions for the current administrative view.
         Overwrite flask_admin.actions.ActionsMixin.init_actions
-        TODO: treat create, delete, edit, view_details as action
         """
         self._actions = []
         self._actions_data = {}
 
-        for p in dir(self):
-            attr = tools.get_dict_attr(self, p)
-
-            if hasattr(attr, '_action'):
-                # 兼容 flask_admin.action
-                if len(attr._action) == 3:
-                    name, text, desc = attr._action
-                    form = None
-                else:
-                    name, text, form, desc = attr._action
-                func = getattr(self, p)
-                self._actions.append((name, text))
-                self._actions_data[name] = Action(func, text, form, desc)
-
-    def get_actions_list(self):
-        """
-        Return a list and a dictironary of allowed actions.
-        Overwrite flask_admin.actions.ActionsMixin.get_actions_list
-        """
-        all_actions = []
-        actions = {}
         if self.can_create:
             action_name = 'create'
-            title = gettext('Create')
+            text = 'Create'
+            self._actions.append(action_name)
+
+            title = gettext(text)
             if self.create_modal:
                 modal_title = gettext('Create New Record')
                 action = AjaxModalAction(
                     action_name,
                     modal_title,
                     form=True,
+                    position=POSITION_HEAD,
                     name=title,
                     endpoint='.create_view'
                 )
@@ -91,52 +74,119 @@ class ActionsMixin(_ActionsMixin):
                 action = LinkAction(
                     action_name,
                     name=title,
+                    position=POSITION_HEAD,
                     endpoint='.create_view'
                 )
-            actions[action_name] = action
-            all_actions.append(action_name)
+            self._actions_data[action_name] = action
 
-        action_list = []
-        actions_confirmation = {}
-        for act in self._actions:
-            name, text = act
+        if self.can_view_details:
+            action_name = 'view_details'
+            title = gettext('Details')
+            self._actions.append(action_name)
 
-            if self.is_action_allowed(name):
-                action_list.append((name, text_type(text)))
+            if self.details_modal:
+                modal_title = gettext('View Record')
+                action = AjaxModalAction(
+                    action_name,
+                    modal_title,
+                    position=POSITION_ROW,
+                    form=False,
+                    name=title,
+                    endpoint='.details_view'
+                )
+            else:
+                action = LinkAction(
+                    action_name,
+                    position=POSITION_ROW,
+                    name=title,
+                    endpoint='.details_view'
+                )
+            self._actions_data[action_name] = action
 
-                confirmation = self._actions_data[name].confirmation
-                if confirmation:
-                    actions_confirmation[name] = text_type(confirmation)
+        if self.can_edit:
+            action_name = 'edit'
+            title = gettext('Edit')
+            self._actions.append(action_name)
 
-        for action_name, title in action_list:
-            confirmation = actions_confirmation.get(action_name)
+            if self.edit_modal:
+                modal_title = gettext('Edit Record')
+                action = AjaxModalAction(
+                    action_name,
+                    modal_title,
+                    position=POSITION_ROW,
+                    form=True,
+                    name=title,
+                    endpoint='.edit_view'
+                )
+            else:
+                action = LinkAction(
+                    action_name,
+                    position=POSITION_ROW,
+                    name=title,
+                    endpoint='.edit_view'
+                )
+            self._actions_data[action_name] = action
+
+        for p in dir(self):
+            attr = tools.get_dict_attr(self, p)
+
+            if not hasattr(attr, '_action'):
+                continue
+
+            # 兼容 flask_admin.action
+            if len(attr._action) == 3:
+                action_name, text, desc = attr._action
+                form = None
+                position = POSITION_HEAD
+            else:
+                action_name, text, position, form, desc = attr._action
+
+            self._actions.append(action_name)
+
+            title = text_type(text)
             klass = None
             if action_name == 'delete':
                 klass = 'danger'
-            form = self._actions_data[action_name].form
+                position = POSITION_HEAD | POSITION_ROW
             if form is not None:
                 action = AjaxModalAction(
                     action_name,
-                    title,
-                    form=True,
-                    name=title,
+                    text_type(text),
+                    form=form,
+                    position=position,
+                    name=text_type(text),
                     endpoint='.action_view'
                 )
             else:
                 action = AjaxAction(
                     action_name,
-                    confirmation=confirmation,
+                    confirmation=text_type(desc),
+                    position=position,
                     klass=klass,
-                    name=title
+                    name=text_type(title)
                 )
-            actions[action_name] = action
-            all_actions.append(action_name)
+            self._actions_data[action_name] = action
+
+        if self.column_extra_row_actions:
+            print('BaseModelView.column_extra_row_actions is deprecated')
+            for action in self.column_extra_row_actions:
+                self._actions.append(action.event)
+                self._actions_data[action.event] = action
+
+    def get_actions_list(self):
+        """
+        Return a list and a dictironary of allowed actions.
+        Overwrite flask_admin.actions.ActionsMixin.get_actions_list
+        """
 
         display_checkbox = False
         result_actions = []
-        action_list = self.actions or all_actions
+        action_list = self.actions or self._actions
         for action_name in action_list:
-            result_actions.append(actions[action_name])
+            action = self._actions_data[action_name]
+            if not (action.position & POSITION_HEAD):
+                continue
+            result_actions.append(action)
             if action_name != 'create':
                 display_checkbox = True
 
@@ -154,73 +204,35 @@ class ActionsMixin(_ActionsMixin):
         """
         pk = self.get_pk_value(item)
 
-        all_actions = []
+        action_names = []
         actions = {}
-        if self.model_can_view_details(item) and self.column_action_details:
-            action_name = 'details'
-            title = gettext('Details')
-            if self.details_modal:
-                modal_title = '{} #{}'.format(gettext('View Record'), pk)
-                action = AjaxModalAction(
-                    action_name,
-                    modal_title,
-                    form=False,
-                    name=title,
-                    endpoint='.details_view'
-                )
-            else:
-                action = LinkAction(
-                    action_name,
-                    name=title,
-                    endpoint='.details_view'
-                )
-            all_actions.append(action_name)
-            actions[action_name] = action
 
-        if self.model_can_edit(item) and self.column_action_edit:
-            action_name = 'edit'
-            title = gettext('Edit')
-            if self.edit_modal:
-                modal_title = '{} #{}'.format(gettext('Edit Record'), pk)
-                action = AjaxModalAction(
-                    action_name,
-                    modal_title,
-                    form=True,
-                    name=title,
-                    endpoint='.edit_view'
-                )
-            else:
-                action = LinkAction(
-                    action_name,
-                    name=title,
-                    endpoint='.edit_view'
-                )
-            all_actions.append(action_name)
-            actions[action_name] = action
-
-        if self.model_can_delete(item) and self.column_action_delete:
-            title = gettext('Delete')
-            action_name = 'delete'
-            confirmation = gettext('Are you sure you want to delete this record?')
-            action = AjaxAction(
-                action_name,
-                confirmation=confirmation,
-                klass='danger',
-                name=title
-            )
-            all_actions.append(action_name)
-            actions[action_name] = action
-
-        if self.column_extra_row_actions:
-            for extra_action in self.column_extra_row_actions:
-                if self.model_check_extra_action(item, extra_action):
-                    all_actions.append(extra_action.event)
-                    actions[extra_action.event] = extra_action
+        action_list = self.row_actions or self._actions
+        for action_name in action_list:
+            action = self._actions_data[action_name]
+            if not (action.position & POSITION_ROW):
+                continue
+            if action_name == 'view_details':
+                if self.column_action_details and self.column_action_details:
+                    action_names.append(action_name)
+                    actions[action_name] = action
+            elif action_name == 'edit':
+                if self.model_can_edit(item) and self.column_action_edit:
+                    action_names.append(action_name)
+                    actions[action_name] = action
+            elif action_name == 'delete':
+                if self.model_can_delete(item) and self.column_action_delete:
+                    action_names.append(action_name)
+                    actions[action_name] = action
+            elif self.model_check_extra_action(item, action_name):
+                action_names.append(action_name)
+                actions[action_name] = action
 
         result_actions = []
-        action_list = self.row_actions or all_actions
+        action_list = self.row_actions or action_names
         for action_name in action_list:
-            result_actions.append(actions[action_name])
+            if self.model_check_extra_action(item, action_name):
+                result_actions.append(actions[action_name])
 
         return result_actions
 
@@ -234,18 +246,18 @@ class ActionsMixin(_ActionsMixin):
         elif not self.is_action_allowed(action_name):
             abort(403)
 
-        func, text, Form, desc = self._actions_data.get(action_name)
+        action = self._actions_data[action_name]
 
         if request.args.get('modal'):
-            template = Form.modal_template
+            template = action.form.modal_template
         else:
-            template = Form.template
+            template = action.form.template
 
         return_url = get_redirect_target() or self.get_url('.index_view')
 
         action_url = url_for('.action_ajax_view', action_name=action_name)
         kwargs = {
-            'form': Form(),
+            'form': action.form(),
             'form_opts': None,
             'action_url': action_url,
             'return_url': return_url

@@ -2,9 +2,14 @@ from flask import url_for
 from flask_admin.babel import gettext
 
 
+POSITION_HEAD = 0X01
+POSITION_ROW = 0x02
+
+
 class BaseAction(object):
-    def __init__(self, event, icon=None, klass=None, name=None, endpoint='.action_ajax_view'):
+    def __init__(self, event, position=POSITION_HEAD, icon=None, klass=None, name=None, endpoint='.action_ajax_view'):
         self.event = event
+        self.position = position
         self.icon = icon
         self.klass = klass
         self.name = name
@@ -39,6 +44,7 @@ class AjaxAction(BaseAction):
         })
         return result
 
+
 class AjaxRowAction(AjaxAction):
     def __init__(self, event, endpoint, **kwargs):
         super(AjaxRowAction, self).__init__(event, endpoint=endpoint, **kwargs)
@@ -67,7 +73,7 @@ class AjaxModalAction(BaseAction):
                 'modal': True,
                 'url': self.url,
                 'title': self.modal_title,
-                'form': self.form,
+                'form': bool(self.form),
                 'btn': btn
             }
         })
