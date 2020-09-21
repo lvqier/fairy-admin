@@ -1,3 +1,5 @@
+import click
+
 from flask import Blueprint, request, url_for, render_template, jsonify, redirect
 from flask_admin import AdminIndexView
 from flask_admin.babel import gettext
@@ -6,7 +8,6 @@ from flask_admin.model.helpers import prettify_name
 from flask_security import Security, current_user, SQLAlchemyUserDatastore
 from flask_security.utils import verify_password, login_user, logout_user
 from flask_login import LoginManager
-
 
 from .views import UserView, RoleView, PermissionView
 from .mixins import UserMixin, RoleMixin, PermissionMixin
@@ -37,8 +38,8 @@ class RABC(SQLAlchemyUserDatastore):
             self.Role = Role
         if not hasattr(self.Role, 'permissions'):
             role_permission_table = db.Table('admin_role_permission',
-                db.Column('role_id', db.Integer, db.ForeignKey('admin_role.id')),
-                db.Column('permission_id', db.Integer, db.ForeignKey('admin_permission.id'))
+                db.Column('role_id', db.Integer, db.ForeignKey(self.Role.id)),
+                db.Column('permission_id', db.Integer, db.ForeignKey(self.Permission.id))
             )
             self.Role.permissions = db.relationship(self.Permission, secondary=role_permission_table)
         if self.User is None:
@@ -48,8 +49,8 @@ class RABC(SQLAlchemyUserDatastore):
             self.User = User
         if not hasattr(self.User, 'roles'):
             user_role_table = db.Table('admin_user_role',
-                db.Column('user_id', db.Integer, db.ForeignKey('admin_user.id')),
-                db.Column('role_id', db.Integer, db.ForeignKey('admin_role.id'))
+                db.Column('user_id', db.Integer, db.ForeignKey(self.User.id)),
+                db.Column('role_id', db.Integer, db.ForeignKey(self.Role.id))
             )
             self.User.roles = db.relationship(self.Role, secondary=user_role_table)
 
@@ -67,6 +68,11 @@ class RABC(SQLAlchemyUserDatastore):
         blueprint.add_url_rule('/logout', endpoint='logout', view_func=self.logout, methods=['GET'])
         blueprint.cli.short_help = 'Commands for rabc shortcuts.'
         blueprint.cli.command('generate_permissions')(self.generate_permissions)
+        blueprint.cli.command('user_change_username')(self.user_change_username)
+        blueprint.cli.command('user_change_password')(self.user_change_password)
+        blueprint.cli.command('create_user')(self.create_user)
+        blueprint.cli.command('user_add_role')(self.user_add_role)
+        blueprint.cli.command('active_user')(self.active_user)
         app.register_blueprint(blueprint, url_prefix=url)
 
     def init_admin(self, admin):
@@ -183,4 +189,64 @@ class RABC(SQLAlchemyUserDatastore):
         for permission in to_delete_permissions:
             self.db.session.delete(permission)
 
+        self.db.session.commit()
+
+    @click.argument('mobile')
+    def user_change_username(self, mobile):
+        username = input('Enter username: ')
+        user = self.User.query.filter_by(mobile=mobile).one_or_none()
+        if user is None:
+            print('User of mobile {} does not exist.'.format(mobile))
+
+        user.username = username
+        self.db.session.commit()
+
+    @click.argument('username')
+    def user_change_password(self, username):
+        user = self.User.query.filter_by(username=username).one_or_none()
+        if user is None:
+            print('User {} does not exist.'.format(username))
+            return
+        password = input('Enter password: ')
+        user.password = password
+        self.db.session.commit()
+
+    def create_user(self):
+        username = input('Enter username: ')
+        mobile = input('Enter mobile: ')
+        password = input('Enter password: ')
+        user = self.User.query.filter_by(username=username).one_or_none()
+        if user is not None:
+            print('User {} already exists.'.format(username))
+            return
+
+        user = self.User(username=username, password=password)
+        user.mobile = mobile
+        self.db.session.add(user)
+        self.db.session.commit()
+
+    @click.argument('username')
+    @click.argument('role')
+    def user_add_role(self, username, role):
+        user = self.User.query.filter_by(username=username).one_or_none()
+        if user is None:
+            print('User {} does not exist.'.format(username))
+            return
+
+        role = self.Role.query.filter_by(name=role).one_or_none()
+        if role is None:
+            print('Role {} does not exist.'.format(role))
+            return
+
+        user.roles.append(role)
+        self.db.session.commit()
+
+    @click.argument('username')
+    def active_user(self, username):
+        user = self.User.query.filter_by(username=username).one_or_none()
+        if user is None:
+            print('User {} does not exist.'.format(username))
+            return
+
+        user.active = True
         self.db.session.commit()

@@ -1,5 +1,5 @@
 
-from flask import g, request, url_for
+from flask import g, request, url_for, redirect
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView as _ModelView
 from flask_admin.model.helpers import get_mdict_item_or_list

@@ -165,6 +165,7 @@ class ActionsMixin(_ActionsMixin):
                     klass=klass,
                     name=text_type(title)
                 )
+            action.func = attr
             self._actions_data[action_name] = action
 
         if self.column_extra_row_actions:
@@ -218,7 +219,7 @@ class ActionsMixin(_ActionsMixin):
 
         return result_actions
 
-    @expose('/action/<string:action_name>/', methods=['POST'])
+    @expose('/action/<string:action_name>/', methods=['GET', 'POST'])
     def action_view(self, action_name):
         """
         获取 Action 表单
@@ -237,7 +238,13 @@ class ActionsMixin(_ActionsMixin):
 
         return_url = get_redirect_target() or self.get_url('.index_view')
 
-        action_url = url_for('.action_ajax_view', action_name=action_name)
+        kwargs = {
+            'action_name': action_name
+        }
+        if 'id' in request.args:
+            kwargs['id'] = request.args['id']
+
+        action_url = url_for('.action_ajax_view', **kwargs)
         kwargs = {
             'form': action.form(),
             'form_opts': None,
@@ -258,8 +265,13 @@ class ActionsMixin(_ActionsMixin):
 
         action = self._actions_data.get(action_name)
 
-        action_data = json.loads(request.form['_data'])
-        ids = action_data['ids']
+        if 'id' in request.args:
+            ids = [request.args['id']]
+        elif '_data' in request.form:
+            action_data = json.loads(request.form['_data'])
+            ids = action_data['ids']
+        else:
+            ids = []
 
         form = None
         if action.form is not None:
@@ -270,9 +282,9 @@ class ActionsMixin(_ActionsMixin):
 
         try:
             if form is None:
-                response = func(ids)
+                response = action.func(self, ids)
             else:
-                response = func(ids, form=form)
+                response = action.func(self, ids, form=form)
         except Exception as e:
             result = dict(
                 code=500,

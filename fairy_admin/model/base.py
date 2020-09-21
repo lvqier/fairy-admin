@@ -89,6 +89,12 @@ class BaseModelViewMixin(ActionsMixin):
 
         if action == 'create':
             return self.can_create
+        elif action == 'delete':
+            return self.can_delete
+        elif action == 'edit':
+            return self.can_edit
+        elif action == 'view_details':
+            return self.can_view_details
 
         return self.is_action_allowed(action)
 
