@@ -76,29 +76,52 @@ class BaseModelViewMixin(ActionsMixin):
     def _repr(self, value):
         return value
 
-    def model_can_view_details(self, row):
+    def _can_do_action(self, action):
         """
-        按行检查是否支持查看详情，用于控制行内“详情”按钮
+        检查是否支持批量动作，用于控制相应动作按钮
         """
-        return self.can_view_details
+        if self.admin.rabc is not None:
+            permission_code = '{}.{}'.format(self.endpoint, action)
+            if isinstance(self.admin, TenantAdmin):
+                permission_code = '{}.{}'.format(self.admin.endpoint, permission_code)
+            if not self.admin.rabc.has_permission(permission_code):
+                return False
 
-    def model_can_edit(self, row):
-        """
-        按行检查是否支持编辑，用于控制行内“编辑”按钮
-        """
-        return self.can_edit
+        if action == 'create':
+            return self.can_create
 
-    def model_can_delete(self, row):
-        """
-        按行检查是否支持编辑，用于控制行内“删除”按钮
-        """
-        return self.can_delete
+        return self.is_action_allowed(action)
 
-    def model_check_extra_action(self, row, action):
+    def model_can_do_action(self, action, item):
         """
-        按行检查是否支持额外动作，用于控制行内相应动作按钮
+        控制行内按钮显示
         """
         return True
+
+    def _model_can_do_action(self, action, item):
+        """
+        按行检查是否支持动作，用于控制行内相应动作按钮
+        """
+        if action == 'view_details':
+            if hasattr(self, 'model_can_view_details'):
+                print('Deprecated: use model_can_do_action instead of model_can_view_details')
+                return self.can_view_details and self.model_can_view_details(item)
+            if not self.can_view_details:
+                return False
+        if action == 'edit':
+            if hasattr(self, 'model_can_edit'):
+                print('Deprecated: use model_can_do_action instead of model_can_edit')
+                return self.can_edit and self.model_can_edit(item)
+            if not self.can_edit:
+                return False
+        elif action == 'delete' and not self.can_delete:
+            if hasattr(self, 'model_can_delete'):
+                print('Deprecated: use model_can_do_action instead of model_can_delete')
+                return self.can_delete and self.model_can_delete(item)
+            if not self.can_delete:
+                return False
+
+        return self.model_can_do_action(item, action)
 
     def _refresh_filters_cache(self):
         self._filters = self.get_filters()
@@ -197,7 +220,7 @@ class BaseModelViewMixin(ActionsMixin):
         return self.admin.rabc.has_permission(permission_code)
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(get_url('rabc.login', next=request.url))
+        return redirect(self.get_url('rabc.login_view', next=request.url))
 
     @expose('/ajax/', methods=['GET'])
     def ajax(self):

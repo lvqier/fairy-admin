@@ -183,6 +183,8 @@ class ActionsMixin(_ActionsMixin):
         result_actions = []
         action_list = self.actions or self._actions
         for action_name in action_list:
+            if not self._can_do_action(action_name):
+                continue
             action = self._actions_data[action_name]
             if not (action.position & POSITION_HEAD):
                 continue
@@ -193,15 +195,6 @@ class ActionsMixin(_ActionsMixin):
         return display_checkbox, result_actions
 
     def _get_list_row_actions(self, item):
-        """
-        关于 action:
-        a. 异步: 异步请求: ajax=True
-          1. 区分是否弹框提示: confirmation
-        b. 同步: 打开页面: ajax=False
-          1. 弹框: modal=object
-            i. 区分是否可编辑: form
-          2. 跳转
-        """
         pk = self.get_pk_value(item)
 
         action_names = []
@@ -212,26 +205,15 @@ class ActionsMixin(_ActionsMixin):
             action = self._actions_data[action_name]
             if not (action.position & POSITION_ROW):
                 continue
-            if action_name == 'view_details':
-                if self.column_action_details and self.column_action_details:
-                    action_names.append(action_name)
-                    actions[action_name] = action
-            elif action_name == 'edit':
-                if self.model_can_edit(item) and self.column_action_edit:
-                    action_names.append(action_name)
-                    actions[action_name] = action
-            elif action_name == 'delete':
-                if self.model_can_delete(item) and self.column_action_delete:
-                    action_names.append(action_name)
-                    actions[action_name] = action
-            elif self.model_check_extra_action(item, action_name):
-                action_names.append(action_name)
-                actions[action_name] = action
+            action_names.append(action_name)
+            actions[action_name] = action
 
         result_actions = []
         action_list = self.row_actions or action_names
         for action_name in action_list:
-            if self.model_check_extra_action(item, action_name):
+            if not self._can_do_action(action_name):
+                continue
+            if self._model_can_do_action(action_name, item):
                 result_actions.append(actions[action_name])
 
         return result_actions
@@ -243,7 +225,7 @@ class ActionsMixin(_ActionsMixin):
         """
         if action_name not in self._actions_data:
             abort(404)
-        elif not self.is_action_allowed(action_name):
+        elif not self._can_do_action(action_name):
             abort(403)
 
         action = self._actions_data[action_name]
@@ -271,17 +253,17 @@ class ActionsMixin(_ActionsMixin):
         """
         if action_name not in self._actions_data:
             abort(404)
-        elif not self.is_action_allowed(action_name):
+        elif not self._can_do_action(action_name):
             abort(403)
 
-        func, text, Form, desc = self._actions_data.get(action_name)
+        action = self._actions_data.get(action_name)
 
         action_data = json.loads(request.form['_data'])
         ids = action_data['ids']
 
         form = None
-        if Form is not None:
-            form = Form(request.form)
+        if action.form is not None:
+            form = action.form(request.form)
             if not form.validate():
                 result = dict(code=400, msg='Invalid form data.')
                 return jsonify(result)

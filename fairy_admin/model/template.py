@@ -7,6 +7,15 @@ POSITION_ROW = 0x02
 
 
 class BaseAction(object):
+    """
+    关于 action:
+    a. 异步: 异步请求: ajax=True
+      1. 区分是否弹框提示: confirmation
+    b. 同步: 打开页面: ajax=False
+      1. 弹框: modal=object
+        i. 区分是否可编辑: form
+      2. 跳转
+    """
     def __init__(self, event, position=POSITION_HEAD, icon=None, klass=None, name=None, endpoint='.action_ajax_view'):
         self.event = event
         self.position = position
