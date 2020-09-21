@@ -3,13 +3,14 @@ import os
 import uuid
 
 from datetime import datetime
-from flask import request, jsonify, get_flashed_messages, abort, send_from_directory
+from flask import request, jsonify, get_flashed_messages, abort, send_from_directory, redirect
 from flask_admin import tools, expose
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model import BaseModelView as _BaseModelView
 from flask_admin.model.base import ViewArgs
 from flask_admin.model.filters import BaseFilter
 from flask_admin.babel import gettext
+from fairy_admin.tenant import TenantAdmin
 from markupsafe import Markup
 from math import ceil
 from wtforms import form
@@ -183,6 +184,20 @@ class BaseModelViewMixin(ActionsMixin):
         }
 
         return jsonify(result)
+
+    def is_accessible(self):
+        if self.admin.rabc is None:
+            return True
+
+        if isinstance(self.admin, TenantAdmin):
+            permission_code = '{}.{}.list'.format(self.admin.endpoint, self.endpoint)
+        else:
+            permission_code = '{}.list'.format(self.endpoint)
+
+        return self.admin.rabc.has_permission(permission_code)
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(get_url('rabc.login', next=request.url))
 
     @expose('/ajax/', methods=['GET'])
     def ajax(self):

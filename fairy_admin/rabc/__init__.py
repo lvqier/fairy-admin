@@ -1,6 +1,8 @@
 from flask import Blueprint, request, url_for, render_template, jsonify, redirect
+from flask_admin import AdminIndexView
 from flask_admin.babel import gettext
 from flask_admin.helpers import get_redirect_target
+from flask_admin.model.helpers import prettify_name
 from flask_security import Security, current_user, SQLAlchemyUserDatastore
 from flask_security.utils import verify_password, login_user, logout_user
 from flask_login import LoginManager
@@ -11,6 +13,9 @@ from .mixins import UserMixin, RoleMixin, PermissionMixin
 
 
 class RABC(SQLAlchemyUserDatastore):
+
+    LOGIN_TEMPLATE = 'rabc/login.html'
+
     def __init__(self, db, user_model=None, role_model=None, permission_model=None, name=None, description=None):
         self.db = db
         self.User = user_model
@@ -53,14 +58,33 @@ class RABC(SQLAlchemyUserDatastore):
     def init_app(self, app, endpoint='rabc', url='/rabc', index_endpoint='admin.index'):
         self.index_endpoint = index_endpoint
 
-        app.config['SECURITY_LOGIN_USER_TEMPLATE'] = 'rabc/login.html'
+        app.config['SECURITY_LOGIN_USER_TEMPLATE'] = self.LOGIN_TEMPLATE
         self.security.init_app(app, datastore=self)
 
-        blueprint = Blueprint(endpoint, __name__)
+        blueprint = Blueprint(endpoint, __name__, cli_group='rabc')
         blueprint.add_url_rule('/login', endpoint='login_view', view_func=self.login_view, methods=['GET'])
         blueprint.add_url_rule('/login', endpoint='ajax_login', view_func=self.ajax_login, methods=['POST'])
         blueprint.add_url_rule('/logout', endpoint='logout', view_func=self.logout, methods=['GET'])
+        blueprint.cli.short_help = 'Commands for rabc shortcuts.'
+        blueprint.cli.command('generate_permissions')(self.generate_permissions)
         app.register_blueprint(blueprint, url_prefix=url)
+
+    def init_admin(self, admin):
+        self.admin = admin
+
+    def has_permission(self, permission_code):
+        alt_permission_codes = [permission_code]
+        items = permission_code.split('.')
+        while items:
+            items[-1] = '*'
+            alt_permission_codes.append('.'.join(items))
+            items = items[:-1]
+
+        for role in current_user.roles:
+            for permission in role.permissions:
+                if permission.code in alt_permission_codes:
+                    return True
+        return False
 
     def login_view(self):
         next_url = request.args.get('next', '')
@@ -98,3 +122,65 @@ class RABC(SQLAlchemyUserDatastore):
     def create_permission_view(self, session, model_view=None, **kwargs):
         ModelView = model_view or PermissionView
         return ModelView(self.Permission, session, **kwargs)
+
+    def generate_permissions(self):
+        permission_codes= []
+        for tenant_admin, _ in self.admin._tenant_admins:
+            permission_code = '{}.*'.format(tenant_admin.endpoint)
+            permission_name = prettify_name('{}.all'.format(tenant_admin.endpoint))
+            permission_codes.append((permission_code, permission_name))
+            for view in tenant_admin._views:
+                endpoint = view.endpoint
+                if isinstance(view, AdminIndexView):
+                    permission_code = '{}.index'.format(tenant_admin.endpoint)
+                    permission_name = prettify_name(permission_code)
+                    permission_codes.append((permission_code, permission_name))
+                    continue
+
+                permission_code = '{}.{}.list'.format(tenant_admin.endpoint, endpoint)
+                permission_name = view._prettify_name(permission_code)
+                permission_codes.append((permission_code, permission_name))
+
+                for action in view._actions:
+                    permission_code = '{}.{}.{}'.format(tenant_admin.endpoint, endpoint, action)
+                    permission_name = view._prettify_name(permission_code)
+                    permission_codes.append((permission_code, permission_name))
+
+        permission_code = '*'.format(tenant_admin.endpoint)
+        permission_name = 'All'
+        permission_codes.append((permission_code, permission_name))
+        for view in self.admin._views:
+            endpoint = view.endpoint
+            if isinstance(view, AdminIndexView):
+                permission_code = 'index'
+                permission_name = prettify_name(permission_code)
+                permission_codes.append((permission_code, permission_name))
+                continue
+
+            permission_code = '{}.list'.format(endpoint)
+            permission_name = view._prettify_name(permission_code)
+            permission_codes.append((permission_code, permission_name))
+
+            for action in view._actions:
+                permission_code = '{}.{}'.format(endpoint, action)
+                permission_name = view._prettify_name(permission_code)
+                permission_codes.append((permission_code, permission_name))
+
+        for permission_code, permission_name in permission_codes:
+            query = self.Permission.query.filter_by(code=permission_code)
+            permission = query.one_or_none()
+            if permission is None:
+                permission = self.Permission(code=permission_code)
+                self.db.session.add(permission)
+            permission.name = permission_name
+
+        to_delete_permissions = []
+        permission_codes = [p[0] for p in permission_codes]
+        for permission in self.Permission.query.all():
+            if permission.code not in permission_codes:
+                to_delete_permissions.append(permission)
+
+        for permission in to_delete_permissions:
+            self.db.session.delete(permission)
+
+        self.db.session.commit()
