@@ -152,7 +152,7 @@ class RABC(SQLAlchemyUserDatastore):
                     permission_name = view._prettify_name(permission_code)
                     permission_codes.append((permission_code, permission_name))
 
-        permission_code = '*'.format(tenant_admin.endpoint)
+        permission_code = '*'
         permission_name = 'All'
         permission_codes.append((permission_code, permission_name))
         for view in self.admin._views:

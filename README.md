@@ -1,8 +1,8 @@
-# Fairy Admin
+# Fairy-Admin
 
-This is a shell package which add [Layui](https://www.layui.com/) based template to [Flask Admin](https://github.com/flask-admin/flask-admin)
+This is a shell package which add [Layui](https://www.layui.com/) based template to [Flask-Admin](https://github.com/flask-admin/flask-admin)
 
-Only **[SQLAlchemy](http://www.sqlalchemy.org/)** backend supported.
+Currently, only **[SQLAlchemy](http://www.sqlalchemy.org/)** backend supported.
 
 
 ## Install
@@ -13,7 +13,7 @@ pip install git+https://github.com/lvqier/fairy-admin.git
 
 ## Usage
 
-To use Layui, replace flask_admin.Admin with fairy_admin.FairyAdmin and pass 'layui' for template_mode
+To use Fairy-Admin, replace flask_admin.Admin with fairy_admin.FairyAdmin and pass 'layui' for the template_mode parameter. Then extend your views from fairy_admin.contrib.sqla.ModelView.
 
 For example:
 ```
@@ -30,6 +30,12 @@ For example:
 > admin.add_view(SampleModelView(SampleModel, db.session))
 
 ```
+
+## Additional features
+
+ * RABC based access control.
+ * Implement sub-admin for tenants.
+ * Implement sub-view for model relationships.
 
 
 ## Migrate from Flask Admin
