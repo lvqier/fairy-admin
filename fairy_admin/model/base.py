@@ -51,6 +51,10 @@ class BaseModelViewMixin(ActionsMixin):
     """
     control display of reload button on table of model list
     """
+    column_display_actions = True
+    """
+    control display of actions column on table of model list
+    """
 
     def __init__(self, *args, **kwargs):
         super(BaseModelViewMixin, self).__init__(*args, **kwargs)
@@ -75,59 +79,6 @@ class BaseModelViewMixin(ActionsMixin):
 
     def _repr(self, value):
         return value
-
-    def _can_do_action(self, action):
-        """
-        检查是否支持批量动作，用于控制相应动作按钮
-        """
-        if self.admin.rabc is not None:
-            permission_code = '{}.{}'.format(self.endpoint, action)
-            if isinstance(self.admin, TenantAdmin):
-                permission_code = '{}.{}'.format(self.admin.endpoint, permission_code)
-            if not self.admin.rabc.has_permission(permission_code):
-                return False
-
-        if action == 'create':
-            return self.can_create
-        elif action == 'delete':
-            return self.can_delete
-        elif action == 'edit':
-            return self.can_edit
-        elif action == 'view_details':
-            return self.can_view_details
-
-        return self.is_action_allowed(action)
-
-    def model_can_do_action(self, action, item):
-        """
-        控制行内按钮显示
-        """
-        return True
-
-    def _model_can_do_action(self, action, item):
-        """
-        按行检查是否支持动作，用于控制行内相应动作按钮
-        """
-        if action == 'view_details':
-            if hasattr(self, 'model_can_view_details'):
-                print('Deprecated: use model_can_do_action instead of model_can_view_details')
-                return self.can_view_details and self.model_can_view_details(item)
-            if not self.can_view_details:
-                return False
-        if action == 'edit':
-            if hasattr(self, 'model_can_edit'):
-                print('Deprecated: use model_can_do_action instead of model_can_edit')
-                return self.can_edit and self.model_can_edit(item)
-            if not self.can_edit:
-                return False
-        elif action == 'delete' and not self.can_delete:
-            if hasattr(self, 'model_can_delete'):
-                print('Deprecated: use model_can_do_action instead of model_can_delete')
-                return self.can_delete and self.model_can_delete(item)
-            if not self.can_delete:
-                return False
-
-        return self.model_can_do_action(item, action)
 
     def _refresh_filters_cache(self):
         self._filters = self.get_filters()
@@ -191,6 +142,9 @@ class BaseModelViewMixin(ActionsMixin):
             default_tool_bar.append('exports')
         default_tool_bar.append('print')
 
+        actions = [action.convert() for action in actions]
+        display_actions = self.column_display_actions and actions
+
         result = {
             'url': self.get_url('.ajax'),
             'page': {
@@ -199,13 +153,13 @@ class BaseModelViewMixin(ActionsMixin):
                 'prev': gettext('Prev'),
                 'next': gettext('Next')
             },
-            'actions': [action.convert() for action in actions],
+            'actions': actions,
             'reload': self.column_list_reload,
             'cols': columns,
             'default_tool_bar': default_tool_bar,
             'column_display_numbers': self.column_display_numbers,
             'column_display_checkbox': display_checkbox,
-            'column_display_actions': self.column_display_actions,
+            'column_display_actions': display_actions,
             'column_actions_width': self.column_actions_width,
             'can_edit': self.can_edit,
             'can_view_details': self.can_view_details,
