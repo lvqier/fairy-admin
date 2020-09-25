@@ -24,8 +24,8 @@
     <table class="layui-table searchable">
     {% for c, name in details_columns %}
       <tr>
-        <td>
-          <b{% if admin_view.form_label_width %} style="display: inline-block; width: {{ admin_view.form_label_width }}"{% endif %}>{{ name }}</b>
+        <td{% if admin_view.form_label_width %} style="width: {{ admin_view.form_label_width }};"{% endif %}>
+          <b style="display: inline-block;">{{ name }}</b>
         </td>
         <td>
         {{ get_value(model, c) }}
@@ -47,7 +47,7 @@
       <ul class="layui-tab-title">
           <li class="layui-this">{{ _gettext('Details') }}</li>
           {% for relationship_view in relationship_views %}
-          <li>{{ relationship_view.name }}</li>
+          <li>{{ relationship_view.title }}</li>
           {% endfor %}
       </ul>
       <div class="layui-tab-content">

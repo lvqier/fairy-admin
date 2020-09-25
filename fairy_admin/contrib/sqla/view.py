@@ -125,7 +125,7 @@ class ModelView(BaseModelViewMixin, _ModelView):
             endpoint = '{}.ajax_config'.format(relationship_view.blueprint.name)
             data = {
                 'field': relationship,
-                'name': self._prettify_name(relationship_view.model.__name__),
+                'title': relationship_view.title,
                 'config_url': self.get_url(endpoint, model_id=id)
             }
             relationship_views.append(data)
@@ -142,8 +142,15 @@ class ModelView(BaseModelViewMixin, _ModelView):
 
 
 class ModelRelationshipView(ModelView):
+    title = None
+    """
+    Display on relationship tab of details page
+    """
+
     def __init__(self, ModelClass, **kwargs):
         super(ModelRelationshipView, self).__init__(ModelClass, None, **kwargs)
+        if not self.title:
+            self.title = self._prettify_name(ModelClass.__name__)
 
     def setup_relationship(self, endpoint, key, session):
         self.session = session

@@ -20,8 +20,8 @@
     <table class="layui-table searchable">
     {% for c, name in details_columns %}
       <tr>
-        <td>
-          <b{% if admin_view.form_label_width %} style="display: inline-block; width: {{ admin_view.form_label_width }}"{% endif %}>{{ name }}</b>
+        <td{% if admin_view.form_label_width %} style="width: {{ admin_view.form_label_width }};"{% endif %}>
+          <b style="display: inline-block;">{{ name }}</b>
         </td>
         <td>
         {{ get_value(model, c) }}
