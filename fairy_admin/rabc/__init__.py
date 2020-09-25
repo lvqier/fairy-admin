@@ -73,6 +73,7 @@ class RABC(SQLAlchemyUserDatastore):
         blueprint.cli.command('create_user')(self.create_user)
         blueprint.cli.command('user_add_role')(self.user_add_role)
         blueprint.cli.command('active_user')(self.active_user)
+        blueprint.cli.command('setup_admin')(self.setup_admin)
         app.register_blueprint(blueprint, url_prefix=url)
 
     def init_admin(self, admin):
@@ -249,4 +250,15 @@ class RABC(SQLAlchemyUserDatastore):
             return
 
         user.active = True
+        self.db.session.commit()
+
+    def setup_admin(self):
+        permission = self.Permission.query.filter_by(code='*').one_or_none()
+        if permission is None:
+            print('Please run generate_permissions first')
+        role = self.Role.query.filter_by(name='admin').one_or_none()
+        if role is None:
+            role = self.Role(name='admin', code='admin')
+            self.db.session.add(role)
+        role.permissions.append(permission)
         self.db.session.commit()

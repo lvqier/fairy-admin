@@ -38,9 +38,9 @@ For example:
  * Implement sub-view for model relationships.
 
 
-## Migrate from Flask Admin
+## Migrate from Flask-Admin
 
-|Flask Admin|Fairy Admin|
+|Flask-Admin|Fairy-Admin|
 |-----------|-----------|
 |flask_admin.Admin|fairy_admin.FairyAdmin|
 |flask_admin.BaseModelView|fairy_admin.BaseModelView|
