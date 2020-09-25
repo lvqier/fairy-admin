@@ -59,7 +59,7 @@ class RABC(SQLAlchemyUserDatastore):
     def init_app(self, app, endpoint='rabc', url='/rabc', index_endpoint='admin.index'):
         self.index_endpoint = index_endpoint
 
-        app.config['SECURITY_LOGIN_USER_TEMPLATE'] = self.LOGIN_TEMPLATE
+        # app.config['SECURITY_LOGIN_USER_TEMPLATE'] = self.LOGIN_TEMPLATE
         self.security.init_app(app, datastore=self)
 
         blueprint = Blueprint(endpoint, __name__, cli_group='rabc')
@@ -97,7 +97,7 @@ class RABC(SQLAlchemyUserDatastore):
         ctx = {'rabc': self}
         if next_url:
             ctx.update(next_url=next_url)
-        return render_template('rabc/login.html', **ctx)
+        return render_template(self.LOGIN_TEMPLATE, **ctx)
 
     def logout(self):
         logout_user()
