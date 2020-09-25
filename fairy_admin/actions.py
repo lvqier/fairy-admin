@@ -328,7 +328,7 @@ class ActionsMixin(_ActionsMixin):
             ids = []
 
         form = None
-        if action.form is not None:
+        if hasattr(action, 'form') and action.form is not None:
             form = action.form(request.form)
             if not form.validate():
                 result = dict(code=400, msg='Invalid form data.')
