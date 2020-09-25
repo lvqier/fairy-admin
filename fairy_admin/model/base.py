@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 
-from datetime import datetime
+from datetime import datetime, date
 from flask import request, jsonify, get_flashed_messages, abort, send_from_directory, redirect
 from flask_admin import tools, expose
 from flask_admin.helpers import get_redirect_target
@@ -27,6 +27,10 @@ class BaseModelViewMixin(ActionsMixin):
     """
     form_label_width controls width of label on the left side of form input
     """
+    column_list_reload = False
+    """
+    control display of reload button on table of model list
+    """
     column_display_numbers = False
     """
     enable column_display_numbers to show row number on table of model list
@@ -34,22 +38,6 @@ class BaseModelViewMixin(ActionsMixin):
     column_actions_width = 178
     """
     control display width of actions column on table of model list
-    """
-    column_action_details = True
-    """
-    control display of details button on actions column on table of model list
-    """
-    column_action_edit = True
-    """
-    control display of edit button on actions column on table of model list
-    """
-    column_action_delete = True
-    """
-    control display of delete button on actions column on table of model list
-    """
-    column_list_reload = False
-    """
-    control display of reload button on table of model list
     """
     column_display_actions = True
     """
@@ -61,11 +49,18 @@ class BaseModelViewMixin(ActionsMixin):
         datetime_formatter = self.column_type_formatters.get(datetime)
         if datetime_formatter is None:
             self.column_type_formatters[datetime] = self._datetime_formatter
+        date_formatter = self.column_type_formatters.get(date)
+        if date_formatter is None:
+            self.column_type_formatters[date] = self._date_formatter
         self.column_type_formatters[bool] = self._bool_formatter
 
     def _datetime_formatter(self, view, value):
         datetime_format = getattr(self, 'datetime_format', '%Y-%m-%d %H:%M:%S')
         return value.strftime(datetime_format)
+
+    def _date_formatter(self, view, value):
+        date_format = getattr(self, 'date_format', '%Y-%m-%d')
+        return value.strftime(date_format)
 
     def _bool_formatter(self, view, value):
         icon = 'ok' if value else 'close'
@@ -161,9 +156,6 @@ class BaseModelViewMixin(ActionsMixin):
             'column_display_checkbox': display_checkbox,
             'column_display_actions': display_actions,
             'column_actions_width': self.column_actions_width,
-            'can_edit': self.can_edit,
-            'can_view_details': self.can_view_details,
-            'can_delete': self.can_delete,
         }
 
         return jsonify(result)
