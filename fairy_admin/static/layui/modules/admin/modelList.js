@@ -8,31 +8,19 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
     , form = layui.form
     , dashboard = layui.dashboard;
 
-    function ajaxAction(url, action, ids, tableFilter, index=null) {
-        $.ajax({
-            async: true,
-            method: "POST",
-            url: url,
-            // contentType: "application/json",
-            data: {
-                "_data": JSON.stringify({ids: ids})
-            },
-            success: function(result) {
-                if (result.code === 0) {
-                    if (index) {
-                        layer.close(index);
-                    }
-                    table.reload(tableFilter);
-                } else {
-                    layer.alert(result.msg);
-                }
+    function ajaxAction(url, ids, tableFilter, index=null) {
+        var callback = function(tableId) {
+            if (index) {
+                layer.close(index);
             }
-        });
+            table.reload(tableId);
+        };
+        dashboard.ajaxAction(url, ids, tableFilter, callback);
     }
 
-    function showConfirmation(url, action, confirmation, ids, tableFilter) {
+    function showConfirmation(url, confirmation, ids, tableFilter) {
         layer.confirm(confirmation, function(index) {
-            ajaxAction(url, action, ids, tableFilter, index);
+            ajaxAction(url, ids, tableFilter, index);
         });
     }
 
@@ -47,9 +35,9 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
             var event = action.event;
             if (action.ajax) {
                 if (actionData.confirmation) {
-                    showConfirmation(actionData.url, event, actionData.confirmation, ids, tableId);
+                    showConfirmation(actionData.url, actionData.confirmation, ids, tableId);
                 } else {
-                    ajaxAction(actionData.url, event, ids, tableId);
+                    ajaxAction(actionData.url, ids, tableId);
                 }
             } else if (actionData.modal) {
                 var url = actionData.url;

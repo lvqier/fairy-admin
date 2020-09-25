@@ -96,6 +96,35 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                 return false;
             });
         },
+        ajaxAction: function(url, ids, filter, callback) {
+            var data = {};
+            if (ids) {
+                data["_data"] = JSON.stringify({ids: ids});
+            }
+            $.ajax({
+                async: true,
+                method: "POST",
+                url: url,
+                data: data,
+                success: function(result) {
+                  if (result.code === 0) {
+                    callback && callback(filter);
+                  } else {
+                    if (result.errors) {
+                      for (var f in result.errors) {
+                        var field = result.errors[f];
+                        layer.alert(field.label + ": " + field.errors[0], {
+                          "title": result.msg
+                        });
+                        break;
+                      }
+                    } else {
+                      layer.alert(result.msg);
+                    }
+                  }
+                }
+            });
+        },
         listen: function() {
             $("body").on("click", "[data-side-fold]", function() {
                 var fold = $(this).data("side-fold");
@@ -125,6 +154,20 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                 }, filter, title, isEdit, btn, function(id) {
                     eval(callback);
                 });
+            });
+            $(".btn-ajax-action").on("click", function() {
+                var filter = "form";
+                var url = $(this).data("url");
+                var confirmation = $(this).data("confirmation");
+                var ids = $(this).data("ids");
+                var callback = $(this).data("callback");
+                if (confirmation) {
+                    layer.confirm(confirmation, function(index) {
+                        dashboard.ajaxAction(url, ids, filter, function(_) {
+                            eval(callback);
+                        });
+                    });
+                }
             });
         },
         refreshForm: function() {
