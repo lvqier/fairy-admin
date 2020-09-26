@@ -167,6 +167,10 @@ layui.define(["jquery", "layer", "form", "layedit", "element", "laydate", "uploa
                             eval(callback);
                         });
                     });
+                } else {
+                    dashboard.ajaxAction(url, ids, filter, function(_) {
+                        eval(callback);
+                    });
                 }
             });
         },
