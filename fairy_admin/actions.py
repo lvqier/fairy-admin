@@ -297,10 +297,19 @@ class ActionsMixin(_ActionsMixin):
         }
         if 'id' in request.args:
             kwargs['id'] = request.args['id']
+            ids = [request.args['id']]
+        elif '_data' in request.form:
+            action_data = json.loads(request.form['_data'])
+            ids = action_data['ids']
+        else:
+            ids = []
+
+        form = action.form()
+        form.on_prefill(ids)
 
         action_url = url_for('.action_ajax_view', **kwargs)
         kwargs = {
-            'form': action.form(),
+            'form': form,
             'form_opts': None,
             'action_url': action_url,
             'return_url': return_url
