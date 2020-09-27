@@ -62,5 +62,6 @@ For example:
 |flask_admin.Admin|fairy_admin.FairyAdmin|
 |flask_admin.BaseModelView|fairy_admin.BaseModelView|
 |flask_admin.contrib.sqla.ModelView|fairy_admin.contrib.sqla.ModelView|
+|flask_admin.actions.action|fairy_admin.actions.action|
 |flask_admin.form.FileUploadField|fairy_admin.form.FileUploadField|
 |flask_admin.form.ImageUploadField|fairy_admin.form.ImageUploadField|
