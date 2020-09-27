@@ -215,7 +215,7 @@ class ActionsMixin(_ActionsMixin):
         for action_name in action_list:
             if not self._can_do_action(action_name):
                 continue
-            if self._model_can_do_action(action_name, item):
+            if not self._model_can_do_action(action_name, item) == False:
                 result_actions.append(actions[action_name])
 
         return result_actions
@@ -244,7 +244,7 @@ class ActionsMixin(_ActionsMixin):
 
     def model_can_do_action(self, action, item):
         """
-        控制行内按钮显示
+        控制行内按钮显示，如果不显示，必须 return False
         """
         return True
 
