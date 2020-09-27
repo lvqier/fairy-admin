@@ -19,13 +19,29 @@ For example:
 ```
 > from fairy_admin import FairyAdmin
 > from fairy_admin.contrib.sqla import ModelView
+> from fairy_admin.form import ActionForm
+> from fairy_admin.actions import action
+> from wtforms import fields, validators
+>
 > # from somewhere import db, SampleModel
 >
 > admin = FairyAdmin(template_mode='layui')
 > # use admin as usual
 >
 > class SampleModelView(ModelView):
->     pass
+>     class SampleForm(ActionForm):
+>         text = fields.TextField('Text', validators=[validators.Required()])
+>
+>         def on_prefill(self, ids):
+>             if not ids:
+>                 return
+>             item = SampleModelView.self.get_one(ids[0])
+>             self.text.process_data(item.text)
+>
+>     @action('sample_action', 'Sample Action', form=SampleForm)
+>     def sample_action(self, ids, form=None):
+>         # process form.text.data
+>         pass
 >
 > admin.add_view(SampleModelView(SampleModel, db.session))
 
@@ -36,6 +52,7 @@ For example:
  * RABC based access control.
  * Implement sub-admin for tenants.
  * Implement sub-view for model relationships.
+ * Support form with view actions.
 
 
 ## Migrate from Flask-Admin
