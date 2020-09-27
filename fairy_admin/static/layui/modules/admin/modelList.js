@@ -95,7 +95,7 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
         var tableOptions = {
             elem: elem,
             toolbar: toolbar,
-            defaultToolBar: config.default_tool_bar,
+            defaultToolbar: config.default_tool_bar,
             url: config.url,
             page: config.page,
             cols: [cols],
