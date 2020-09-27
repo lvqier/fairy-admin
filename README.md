@@ -49,7 +49,7 @@ For example:
 
 ## Additional features
 
- * RABC based access control.
+ * Role based access control.
  * Implement sub-admin for tenants.
  * Implement sub-view for model relationships.
  * Support form with view actions.

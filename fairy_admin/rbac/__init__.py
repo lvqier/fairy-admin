@@ -13,9 +13,9 @@ from .views import UserView, RoleView, PermissionView
 from .mixins import UserMixin, RoleMixin, PermissionMixin
 
 
-class RABC(SQLAlchemyUserDatastore):
+class RBAC(SQLAlchemyUserDatastore):
 
-    LOGIN_TEMPLATE = 'rabc/login.html'
+    LOGIN_TEMPLATE = 'rbac/login.html'
 
     def __init__(self, db, user_model=None, role_model=None, permission_model=None, name=None, description=None):
         self.db = db
@@ -54,19 +54,19 @@ class RABC(SQLAlchemyUserDatastore):
             )
             self.User.roles = db.relationship(self.Role, secondary=user_role_table)
 
-        super(RABC, self).__init__(db, self.User, self.Role)
+        super(RBAC, self).__init__(db, self.User, self.Role)
 
-    def init_app(self, app, endpoint='rabc', url='/rabc', index_endpoint='admin.index'):
+    def init_app(self, app, endpoint='rbac', url='/rbac', index_endpoint='admin.index'):
         self.index_endpoint = index_endpoint
 
         # app.config['SECURITY_LOGIN_USER_TEMPLATE'] = self.LOGIN_TEMPLATE
         self.security.init_app(app, datastore=self)
 
-        blueprint = Blueprint(endpoint, __name__, cli_group='rabc')
+        blueprint = Blueprint(endpoint, __name__, cli_group='rbac')
         blueprint.add_url_rule('/login', endpoint='login_view', view_func=self.login_view, methods=['GET'])
         blueprint.add_url_rule('/login', endpoint='ajax_login', view_func=self.ajax_login, methods=['POST'])
         blueprint.add_url_rule('/logout', endpoint='logout', view_func=self.logout, methods=['GET'])
-        blueprint.cli.short_help = 'Commands for rabc shortcuts.'
+        blueprint.cli.short_help = 'Commands for rbac shortcuts.'
         blueprint.cli.command('generate_permissions')(self.generate_permissions)
         blueprint.cli.command('user_change_username')(self.user_change_username)
         blueprint.cli.command('user_change_password')(self.user_change_password)
@@ -95,7 +95,7 @@ class RABC(SQLAlchemyUserDatastore):
 
     def login_view(self):
         next_url = request.args.get('next', '')
-        ctx = {'rabc': self}
+        ctx = {'rbac': self}
         if next_url:
             ctx.update(next_url=next_url)
         return render_template(self.LOGIN_TEMPLATE, **ctx)

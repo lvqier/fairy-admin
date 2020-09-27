@@ -42,7 +42,7 @@
         <ul class="layui-nav layui-layout-right">
           {{ layout.menu_links() }}
           {% block access_control %}
-          {% if admin_view.admin.rabc %}
+          {% if admin_view.admin.rbac %}
           <li class="layui-nav-item">
             {% if current_user.is_authenticated %}
             <a href="javascript:;">
@@ -53,10 +53,10 @@
             </a>
             <dl class="layui-nav-child layui-anim layui-anim-upbit">
               <!-- <hr /> -->
-              <dd><a href="{{ url_for('rabc.logout', next=request.url ) }}">退出</a></dd>
+              <dd><a href="{{ url_for('rbac.logout', next=request.url ) }}">退出</a></dd>
             </dl>
             {% else %}
-            <a href="{{ url_for('rabc.login_view', next=request.full_path) }}">未登陆</a>
+            <a href="{{ url_for('rbac.login_view', next=request.full_path) }}">未登陆</a>
             {% endif %}
           </li>
           {% endif %}

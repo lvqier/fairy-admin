@@ -161,7 +161,7 @@ class BaseModelViewMixin(ActionsMixin):
         return jsonify(result)
 
     def is_accessible(self):
-        if self.admin.rabc is None:
+        if self.admin.rbac is None:
             return True
 
         if isinstance(self.admin, TenantAdmin):
@@ -169,10 +169,10 @@ class BaseModelViewMixin(ActionsMixin):
         else:
             permission_code = '{}.list'.format(self.endpoint)
 
-        return self.admin.rabc.has_permission(permission_code)
+        return self.admin.rbac.has_permission(permission_code)
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(self.get_url('rabc.login_view', next=request.url))
+        return redirect(self.get_url('rbac.login_view', next=request.url))
 
     @expose('/ajax/', methods=['GET'])
     def ajax(self):

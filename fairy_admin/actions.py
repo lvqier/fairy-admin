@@ -224,11 +224,11 @@ class ActionsMixin(_ActionsMixin):
         """
         检查是否支持批量动作，用于控制相应动作按钮
         """
-        if self.admin.rabc is not None:
+        if self.admin.rbac is not None:
             permission_code = '{}.{}'.format(self.endpoint, action)
             if isinstance(self.admin, TenantAdmin):
                 permission_code = '{}.{}'.format(self.admin.endpoint, permission_code)
-            if not self.admin.rabc.has_permission(permission_code):
+            if not self.admin.rbac.has_permission(permission_code):
                 return False
 
         if action == 'create':

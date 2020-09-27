@@ -59,7 +59,7 @@ class TenantAdmin(AdminMixin, Admin):
             endpoint=endpoint,
             **kwargs
         )
-        self.rabc = None
+        self.rbac = None
         self._add_return_link(
             return_name,
             endpoint=return_endpoint,
@@ -101,7 +101,7 @@ class TenantAdmin(AdminMixin, Admin):
         self.app = app
         self.admin = admin
         self.template_mode = admin.template_mode
-        self.rabc = admin.rabc
+        self.rbac = admin.rbac
         for view in self._views:
             blueprint = view.create_blueprint(self)
             blueprint.url_value_preprocessor(self._url_value_preprocessor)

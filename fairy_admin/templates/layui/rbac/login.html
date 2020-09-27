@@ -1,4 +1,4 @@
-{% extends 'rabc/base.html' %}
+{% extends 'rbac/base.html' %}
 
 {% block head %}
 {{ super() }}
@@ -59,8 +59,8 @@ body {
 <div class="container">
   <div class="user-login-main">
     <div class="user-login-box user-login-header">
-      <h2>{% if rabc.name %}{{ rabc.name }}{% else %}Fairy Admin{% endif %}</h2>
-      <p>{% if rabc.description %}{{ rabc.description }}基于Flask Admin和LayUI的后台框架{% endif %}</p>
+      <h2>{% if rbac.name %}{{ rbac.name }}{% else %}Fairy Admin{% endif %}</h2>
+      <p>{% if rbac.description %}{{ rbac.description }}基于Flask Admin和LayUI的后台框架{% endif %}</p>
     </div>
     <div class="user-login-box user-login-body layui-form">
       <form method="POST" action="{{ url_for('.ajax_login') }}">

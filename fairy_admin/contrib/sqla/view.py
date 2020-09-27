@@ -138,7 +138,6 @@ class ModelView(BaseModelViewMixin, _ModelView):
             relationship_views=relationship_views,
             return_url=return_url
         )
-        return super(ModelView, self).details_view()
 
 
 class ModelRelationshipView(ModelView):
