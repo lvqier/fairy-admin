@@ -1,0 +1,166 @@
+.layout-side-fold .layui-layout-admin .layui-layout-left {
+  left: 60px;
+}
+.layout-side-fold .layui-layout-admin .layui-side {
+  width: 60px;
+}
+.layout-side-fold .layui-layout-admin .layui-logo {
+  width: 60px;
+}
+.layout-side-fold .layui-layout-admin .layui-logo span {
+  display: none;
+}
+.layout-side-fold .layui-layout-admin .layui-body {
+  left: 60px;
+}
+.layout-side-fold .layui-side-menu .layui-nav {
+  width: 60px;
+}
+.layout-side-fold .layui-side-menu .layui-nav .layui-nav-itemed a {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.layout-side-fold .layui-side-menu .layui-nav cite,
+.layout-side-fold .layui-side-menu .layui-nav .layui-nav-more,
+.layout-side-fold .layui-side-menu .layui-nav .layui-nav-child {
+  display: none;
+}
+.layui-layout-admin .layui-layout-left {
+  left: 220px;
+  padding: 0 10px;
+}
+.layui-layout-admin .layui-layout-left .layui-nav-item {
+  margin: 0 20px;
+}
+.layui-layout-admin .layui-layout-left .layui-nav-item a {
+  padding: 0;
+}
+.layui-layout-admin .layui-header {
+  height: 50px;
+  background-color: #fff;
+  border-bottom: none;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.layui-layout-admin .layui-header a {
+  color: #333;
+}
+.layui-layout-admin .layui-header a:hover {
+  color: #000;
+}
+.layui-layout-admin .layui-header .layui-this::after,
+.layui-layout-admin .layui-header .layui-nav-bar {
+  top: 0 !important;
+  background-color: #20222A;
+  height: 2px;
+}
+.layui-layout-admin .layui-header .layui-nav .layui-nav-item {
+  height: 50px;
+  line-height: 50px;
+}
+.layui-layout-admin .layui-header .layui-nav .layui-nav-item .layui-icon {
+  position: relative;
+  top: 1px;
+  font-size: 16px;
+}
+.layui-layout-admin .layui-header .layui-nav .layui-nav-more {
+  border-top-color: #666;
+}
+.layui-layout-admin .layui-header .layui-nav .layui-nav-mored {
+  border-top-color: transparent;
+  border-bottom-color: #666;
+}
+.layui-layout-admin .layui-side {
+  width: 220px;
+  top: 0;
+  z-index: 1001;
+}
+.layui-layout-admin .layui-logo {
+  height: 50px;
+  width: 220px;
+  line-height: 50px;
+  z-index: 1002;
+  color: rgba(255, 255, 255, 0.8);
+  background-color: #20222A !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+}
+.layui-layout-admin .layui-logo a {
+  color: rgba(255, 255, 255, 0.8);
+}
+.layui-layout-admin .layui-body {
+  left: 220px;
+}
+.layui-layout-admin .layui-body .breadcrumb {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+}
+.layui-side-menu {
+  box-shadow: 1px 0 2px 0 rgba(0, 0, 0, 0.05);
+  background-color: #20222A !important;
+}
+.layui-side-menu .layui-side-scroll {
+  width: 240px;
+}
+.layui-side-menu .layui-nav {
+  width: 220px;
+  margin-top: 50px;
+  background: 0 0;
+}
+.layui-side-menu .layui-nav .layui-nav-item a {
+  padding-left: 45px;
+}
+.layui-side-menu .layui-nav .layui-nav-item .layui-icon {
+  position: absolute;
+  left: 20px;
+}
+.layui-btn-group .layui-btn-disabled:first-child {
+  border-left: 1px solid #e6e6e6 !important;
+}
+.layui-btn-group .layui-dropdown .layui-btn {
+  border-radius: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+}
+.layui-btn-group .layui-dropdown:first-child {
+  border-left: none;
+}
+.layui-btn-group .layui-dropdown:first-child .layui-btn {
+  border-radius: 2px 0 0 2px;
+}
+.layui-btn-group .layui-dropdown:last-child .layui-btn {
+  border-radius: 0 2px 2px 0;
+}
+.layui-btn + .layui-dropdown,
+.dropdown-root + .layui-btn {
+  margin-left: 10px;
+}
+form.icon {
+  display: inline;
+}
+form.icon button {
+  border-style: none;
+  background-color: transparent;
+  cursor: pointer;
+}
+.layui-table-cell {
+  height: auto;
+}
+.layui-card .layui-card-header-auto {
+  height: auto;
+}
+.layui-input-inline .layui-btn {
+  vertical-align: top;
+}
+.upload-field * {
+  vertical-align: top;
+}
+.upload-field img.image-preview {
+  margin: 0 8px;
+  max-width: 120px;
+  max-height: 120px;
+}
+.upload-field a.file-preview {
+  display: inline-block;
+  margin: 0 8px;
+  line-height: 38px;
+}
+.layui-layer-page .layui-layer-content {
+  overflow: visible !important;
+}
