@@ -1,3 +1,7 @@
-{% macro url() -%}
-    {{ get_url('fairy_admin.static', *varargs, **kwargs) }}
+{% macro url(filename='', force_local=False) -%}
+  {%- if config.FAIRY_ADMIN_STATIC_URL and not force_local -%}
+    {{ config.FAIRY_ADMIN_STATIC_URL }}/{{ filename }}
+  {%- else -%}
+    {{ get_url('fairy_admin.static', filename=filename) }}
+  {%- endif -%}
 {%- endmacro %}

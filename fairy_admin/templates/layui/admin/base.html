@@ -13,11 +13,11 @@
       <link rel="icon" href="data:;base64,=">
     {% endblock %}
     {% block head_css %}
-      <link rel="stylesheet" href="{{ admin_static.url(filename='layui/css/layui.css') }}" />
+      <link rel="stylesheet" href="{{ admin_static.url(filename='layui/2.5.6/css/layui.css') }}" />
       {% if config.DEBUG %}
-      <link rel="stylesheet/less" type="text/css" href="{{ admin_static.url(filename='admin/css/admin.less') }}" />
+      <link rel="stylesheet/less" type="text/css" href="{{ admin_static.url(filename='admin/css/admin.less', force_local=True) }}" />
       {% else %}
-      <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='admin/css/admin.css') }}" />
+      <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='admin/css/admin.css', force_local=True) }}" />
       {% endif %}
       {% if admin_view.extra_css %}
         {% for css_url in admin_view.extra_css %}
@@ -104,10 +104,10 @@
     {% endblock %}
 
     {% block tail_js %}
-    <script src="{{ admin_static.url(filename='layui/layui.js') }}"></script>
+    <script src="{{ admin_static.url(filename='layui/2.5.6/layui.js') }}"></script>
     <script>
     layui.config({
-        base: "{{ admin_static.url(filename='layui/lay/modules/') }}"
+        base: "{{ admin_static.url(filename='layui/2.5.6/lay/modules/', force_local=True) }}"
     }).extend({
         soulTable: 'soulTable/soulTable',
         tableChild: 'soulTable/tableChild',

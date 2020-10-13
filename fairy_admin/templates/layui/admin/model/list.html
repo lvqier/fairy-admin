@@ -8,8 +8,8 @@
 {% block head %}
   {{ super() }}
   {{ lib.form_css() }}
-  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/lay/modules/dropdown.css') }}" />
-  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/lay/modules/soulTable.css') }}" />
+  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/2.5.6/lay/modules/dropdown.css', force_local=True) }}" />
+  <link rel="stylesheet" type="text/css" href="{{ admin_static.url(filename='layui/2.5.6/lay/modules/soulTable.css', force_local=True) }}" />
 {% endblock %}
 
 {% block breadcrumb %}
