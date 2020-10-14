@@ -2,9 +2,20 @@
 import os
 
 from flask import Blueprint
+from flask._compat import text_type
+from flask.json import JSONEncoder as BaseEncoder
 from flask_admin import Admin
+from speaklater import _LazyString
 
 from .tenant import AdminMixin, AdminIndexView
+
+
+class JSONEncoder(BaseEncoder):
+    def default(self, o):
+        if isinstance(o, _LazyString):
+            return text_type(o)
+
+        return BaseEncoder.default(self, o)
 
 
 class FairyAdmin(AdminMixin, Admin):
@@ -24,6 +35,8 @@ class FairyAdmin(AdminMixin, Admin):
             'index_view': index_view
         })
         super(FairyAdmin, self).init_app(app, *args, **kwargs)
+
+        app.json_encoder = JSONEncoder
 
         self.rbac = rbac or self.rbac
         if 'fairy_admin' not in app.blueprints:

@@ -3,10 +3,9 @@ import json
 from collections import namedtuple
 from flask import request, url_for, jsonify, abort, get_flashed_messages
 from flask_admin import tools, expose
-from flask_admin._compat import text_type
 from flask_admin.helpers import get_redirect_target
 from flask_admin.actions import ActionsMixin as _ActionsMixin
-from flask_admin.babel import gettext
+from flask_admin.babel import lazy_gettext
 
 from .model.template import AjaxAction, AjaxModalAction, LinkAction
 from .model.template import POSITION_HEAD, POSITION_ROW
@@ -57,12 +56,11 @@ class ActionsMixin(_ActionsMixin):
 
         if self.can_create:
             action_name = 'create'
-            text = 'Create'
             self._actions.append(action_name)
 
-            title = gettext(text)
+            title = lazy_gettext('Create')
             if self.create_modal:
-                modal_title = gettext('Create New Record')
+                modal_title = lazy_gettext('Create New Record')
                 action = AjaxModalAction(
                     action_name,
                     modal_title,
@@ -82,11 +80,11 @@ class ActionsMixin(_ActionsMixin):
 
         if self.can_view_details:
             action_name = 'view_details'
-            title = gettext('Details')
+            title = lazy_gettext('Details')
             self._actions.append(action_name)
 
             if self.details_modal:
-                modal_title = gettext('View Record')
+                modal_title = lazy_gettext('View Record')
                 action = AjaxModalAction(
                     action_name,
                     modal_title,
@@ -106,11 +104,11 @@ class ActionsMixin(_ActionsMixin):
 
         if self.can_edit:
             action_name = 'edit'
-            title = gettext('Edit')
+            title = lazy_gettext('Edit')
             self._actions.append(action_name)
 
             if self.edit_modal:
-                modal_title = gettext('Edit Record')
+                modal_title = lazy_gettext('Edit Record')
                 action = AjaxModalAction(
                     action_name,
                     modal_title,
@@ -144,7 +142,6 @@ class ActionsMixin(_ActionsMixin):
 
             self._actions.append(action_name)
 
-            title = text_type(text)
             klass = None
             if action_name == 'delete':
                 klass = 'danger'
@@ -152,19 +149,19 @@ class ActionsMixin(_ActionsMixin):
             if form is not None:
                 action = AjaxModalAction(
                     action_name,
-                    text_type(text),
+                    text,
                     form=form,
                     position=position,
-                    name=text_type(text),
+                    name=text,
                     endpoint='.action_view'
                 )
             else:
                 action = AjaxAction(
                     action_name,
-                    confirmation=text_type(desc),
+                    confirmation=desc,
                     position=position,
                     klass=klass,
-                    name=text_type(title)
+                    name=text
                 )
             action.func = attr
             self._actions_data[action_name] = action
