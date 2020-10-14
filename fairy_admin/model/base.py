@@ -134,10 +134,13 @@ class BaseModelViewMixin(ActionsMixin):
 
             columns.append(column)
 
-        default_tool_bar = ['filter']
+        default_tool_bar = []
+        if not hasattr(self, 'can_filter_columns') or self.can_filter_columns:
+            default_tool_bar.append('filter')
         if self.can_export:
             default_tool_bar.append('exports')
-        default_tool_bar.append('print')
+        if hasattr(self, 'can_print') and self.can_print:
+            default_tool_bar.append('print')
 
         actions = [action.convert() for action in actions]
         display_actions = self.column_display_actions and actions
