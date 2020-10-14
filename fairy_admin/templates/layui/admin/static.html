@@ -2,6 +2,6 @@
   {%- if config.FAIRY_ADMIN_STATIC_URL and not force_local -%}
     {{ config.FAIRY_ADMIN_STATIC_URL }}/{{ filename }}
   {%- else -%}
-    {{ get_url('fairy_admin.static', filename=filename) }}
+    {{ url_for('fairy_admin.static', filename=filename) }}
   {%- endif -%}
 {%- endmacro %}

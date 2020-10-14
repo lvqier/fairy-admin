@@ -1,3 +1,4 @@
+{% import 'admin/static.html' as admin_static with context %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -10,23 +11,22 @@
         <meta name="author" content="">
     {% endblock %}
     {% block head_css %}
-        <link rel="stylesheet" href="//cdn.staticfile.org/layui/2.5.6/css/layui.min.css" />
+    <link rel="stylesheet" href="{{ admin_static.url(filename='layui/2.5.6/css/layui.css') }}" />
     {% endblock %}
     {% block head %}
     {% endblock %}
     {% block head_tail %}
     {% endblock %}
-    <script data-env="development" src="//cdn.staticfile.org/less.js/3.11.1/less.min.js"></script>
   </head>
   <body class="layui-layout-body">
     {% block page_body %}
     {% endblock %}
 
     {% block tail_js %}
-    <script src="//cdn.staticfile.org/layui/2.5.6/layui.min.js"></script>
+    <script src="{{ admin_static.url(filename='layui/2.5.6/layui.js') }}"></script>
     <script>
     layui.config({
-        base: "{{ url_for('admin.static', filename='layui/modules/') }}"
+        base: "{{ admin_static.url(filename='layui/modules/', force_local=True) }}"
     }).extend({
         echarts: 'echarts',
         soulTable: 'soulTable/soulTable',
