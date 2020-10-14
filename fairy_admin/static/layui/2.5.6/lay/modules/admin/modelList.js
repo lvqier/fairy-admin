@@ -205,7 +205,24 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                     });
                     table.on("toolbar(" + _id + ")", function(obj) {
                         var {event, config} = obj;
-                        if (event === 'reload') {
+                        if (event === 'LAYTABLE_EXPORT') {
+                            var panelList = $("[lay-id=\"" + _id + "\"]").find("[lay-event=\"LAYTABLE_EXPORT\"] ul.layui-table-tool-panel li");
+                            panelList.off("click");
+                            panelList.on("click", function() {
+                                var type = $(this).data('type');
+                                if (type === "xls") {
+                                    type = "xlsx";
+                                }
+                                var url = result.export_url.replace(encodeURIComponent("<export_type>"), type);
+                                var link = document.createElement("a");
+                                link.href = url;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                delete link;
+                            });
+                            return;
+                        } else if (event === "reload") {
                             table.reload(_id);
                             return;
                         }

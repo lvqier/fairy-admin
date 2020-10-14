@@ -22,6 +22,8 @@ from .fields import UnboundField
 
 class BaseModelViewMixin(ActionsMixin):
     can_export = True
+    export_types = ['csv', 'xlsx']
+
     page_size = 10
     form_label_width = None
     """
@@ -157,6 +159,8 @@ class BaseModelViewMixin(ActionsMixin):
             'column_display_actions': display_actions,
             'column_actions_width': self.column_actions_width,
         }
+        if self.can_export:
+            result['export_url'] = self.get_url('.export', export_type='<export_type>')
 
         return jsonify(result)
 
