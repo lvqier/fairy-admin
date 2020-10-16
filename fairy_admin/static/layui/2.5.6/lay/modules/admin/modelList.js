@@ -214,6 +214,9 @@ layui.define(["jquery", "laytpl", "table", "soulTable", "layer", "upload", "form
                                     type = "xlsx";
                                 }
                                 var url = result.export_url.replace(encodeURIComponent("<export_type>"), type);
+                                if (config.where) {
+                                    url = url + '?' + new URLSearchParams(config.where).toString();
+                                }
                                 var link = document.createElement("a");
                                 link.href = url;
                                 document.body.appendChild(link);
