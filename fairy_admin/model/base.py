@@ -7,7 +7,7 @@ from flask import request, jsonify, get_flashed_messages, abort, send_from_direc
 from flask_admin import tools, expose
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model import BaseModelView as _BaseModelView
-from flask_admin.model.base import ViewArgs
+from flask_admin.model.base import ViewArgs as _ViewArgs
 from flask_admin.model.filters import BaseFilter
 from flask_admin.babel import gettext
 from fairy_admin.tenant import TenantAdmin
@@ -18,6 +18,12 @@ from wtforms import form
 from fairy_admin.actions import ActionsMixin
 
 from .fields import UnboundField
+
+
+class ViewArgs(_ViewArgs):
+    def __init__(self, *args, **kwargs):
+        super(ViewArgs, self).__init__(*args, **kwargs)
+        self.sort_desc = kwargs.get('sort_desc') == 'desc'
 
 
 class BaseModelViewMixin(ActionsMixin):
@@ -181,11 +187,7 @@ class BaseModelViewMixin(ActionsMixin):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(self.get_url('rbac.login_view', next=request.url))
 
-    @expose('/ajax/', methods=['GET'])
-    def ajax(self):
-        """
-        LayUI 的数据表数据接口
-        """
+    def _get_list_extra_args(self):
         extra_args = {}
         for k, v in request.args.items():
             if k in ('page', 'limit', 'field', 'desc', 'search', 'filterSos'):
@@ -198,21 +200,38 @@ class BaseModelViewMixin(ActionsMixin):
             page=request.args.get('page', 1, type=int),
             page_size=request.args.get('limit', 0, type=int),
             sort=request.args.get('field', None, type=str),
-            sort_desc=request.args.get('desc', None, type=int),
+            sort_desc=request.args.get('order', None, type=str),
             search=request.args.get('search', None),
             filters=self._get_list_filter_args(),
             extra_args=extra_args
         )
-
         sort_column = view_args.sort
-        sort_desc = view_args.extra_args.get('order') == 'desc'
+        view_args.sort = None
+        for idx in range(len(self._list_columns)):
+            item = self._list_columns[idx]
+            if item[0] == sort_column:
+                view_args.sort = idx
+                break
+        return view_args
+
+    @expose('/ajax/', methods=['GET'])
+    def ajax(self):
+        """
+        LayUI 的数据表数据接口
+        """
+
+        view_args = self._get_list_extra_args()
+
+        sort_column = self._get_column_by_idx(view_args.sort)
+        if sort_column is not None:
+            sort_column = sort_column[0]
 
         page_size = view_args.page_size or self.page_size
 
         count, data = self.get_list(
             view_args.page - 1,
             sort_column,
-            sort_desc,
+            view_args.sort_desc,
             view_args.search,
             view_args.filters,
             page_size=page_size
